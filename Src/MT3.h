@@ -410,6 +410,45 @@ namespace MT3 {
 				0.0f, 0.0f, 0.0f, 1.0f,
 			};
 		}
+
+		static inline Mat4 MakeSRTMatrix(
+			const Vec3& scale_,
+			const Vec3& rotate_,
+			const Vec3& translate_
+		) {
+			float
+				cosAlpha{ std::cos(rotate_.Entries_[0]) },
+				sinAlpha{ std::sin(rotate_.Entries_[0]) },
+				cosBeta{ std::cos(rotate_.Entries_[1]) },
+				sinBeta{ std::sin(rotate_.Entries_[1]) },
+				cosGamma{ std::cos(rotate_.Entries_[2]) },
+				sinGamma{ std::sin(rotate_.Entries_[2]) };
+
+			Mat4 srt{
+				cosBeta * cosGamma,
+				cosBeta * sinGamma,
+				-sinBeta,
+				0.0f,
+				sinAlpha * sinBeta * cosGamma - cosAlpha * sinGamma,
+				sinAlpha * sinBeta * sinGamma + cosAlpha * cosGamma,
+				sinAlpha * cosBeta,
+				0.0f,
+				cosAlpha * sinBeta * cosGamma + sinAlpha * sinGamma,
+				cosAlpha * sinBeta * sinGamma - sinAlpha * cosGamma,
+				cosAlpha * cosBeta,
+				0.0f,
+				translate_.Entries_[0],
+				translate_.Entries_[1],
+				translate_.Entries_[2],
+				1.0f,
+			};
+
+			srt.XMMs_[0] = _mm_mul_ps(srt.XMMs_[0], _mm_set1_ps(scale_.Entries_[0]));
+			srt.XMMs_[1] = _mm_mul_ps(srt.XMMs_[1], _mm_set1_ps(scale_.Entries_[1]));
+			srt.XMMs_[2] = _mm_mul_ps(srt.XMMs_[2], _mm_set1_ps(scale_.Entries_[2]));
+
+			return srt;
+		}
 	};
 
 	inline Vec3 operator*(const Vec3& v_, const Mat4& m_) {

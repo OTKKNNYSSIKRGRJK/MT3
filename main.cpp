@@ -3,7 +3,7 @@
 #include"Src/MT3.h"
 #include<format>
 
-const char kWindowTitle[] = "LE2C_08_コウ_シキン_MT3_00_04";
+const char kWindowTitle[] = "LE2C_08_コウ_シキン_MT3_00_05";
 
 namespace MT3 {
 	namespace {
@@ -18,30 +18,22 @@ namespace MT3 {
 		}
 	}
 
-	class HW_00_04 {
+	class HW_00_05 {
 	private:
-		Vec3 Rotate_{};
-		Mat4 RotateMats_[4]{};
+		Mat4 WorldMat_{};
 
 	public:
-		HW_00_04(const Vec3& rotate_ = { 0.4f, 1.43f, -0.8f }) {
-			RotateMats_[0] = Mat4::MakeRotateXMatrix(rotate_.x);
-			RotateMats_[1] = Mat4::MakeRotateYMatrix(rotate_.y);
-			RotateMats_[2] = Mat4::MakeRotateZMatrix(rotate_.z);
-			RotateMats_[3] = RotateMats_[0];
-			RotateMats_[3] *= RotateMats_[1];
-			RotateMats_[3] *= RotateMats_[2];
+		HW_00_05(
+			const Vec3& scale_ = { 1.2f, 0.79f, -2.1f },
+			const Vec3& rotate_ = { 0.4f, 1.43f, -0.8f },
+			const Vec3& translate_ = { 2.7f, -4.15f, 1.57f }
+		) {
+			WorldMat_ = Mat4::MakeSRTMatrix(scale_, rotate_, translate_);
 		}
 
 		void Print() const {
-			Novice::ScreenPrintf(0, 0, "Rotate X matrix");
-			PrintMat4(RotateMats_[0], 0, 20);
-			Novice::ScreenPrintf(0, 120, "Rotate Y matrix");
-			PrintMat4(RotateMats_[1], 0, 140);
-			Novice::ScreenPrintf(0, 240, "Rotate Z matrix");
-			PrintMat4(RotateMats_[2], 0, 260);
-			Novice::ScreenPrintf(0, 360, "Rotate XYZ matrix");
-			PrintMat4(RotateMats_[3], 0, 380);
+			Novice::ScreenPrintf(0, 0, "World matrix");
+			PrintMat4(WorldMat_, 0, 20);
 		}
 	};
 }
@@ -52,7 +44,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	char keys[256]{ 0 };
 	char preKeys[256]{ 0 };
 
-	MT3::HW_00_04 hw{};
+	MT3::HW_00_05 hw{};
 
 	while (Novice::ProcessMessage() == 0) {
 		Novice::BeginFrame();
