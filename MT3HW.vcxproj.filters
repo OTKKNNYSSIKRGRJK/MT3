@@ -26,7 +26,7 @@
     <ClCompile Include="C:\KamataEngine\Adapter\Novice.cpp">
       <Filter>KamataEngine\Adapter</Filter>
     </ClCompile>
-    <ClCompile Include="HW_00\HW_00_01.cpp">
+    <ClCompile Include="HW_00\HW_00_02.cpp">
       <Filter>HW_00</Filter>
     </ClCompile>
   </ItemGroup>
@@ -115,8 +115,11 @@
     <ClInclude Include="Src\MT3Vec3.h">
       <Filter>Src</Filter>
     </ClInclude>
-    <ClInclude Include="HW_00\HW_00_01.h">
+    <ClInclude Include="HW_00\HW_00_02.h">
       <Filter>HW_00</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\MT3Mat4.h">
+      <Filter>Src</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

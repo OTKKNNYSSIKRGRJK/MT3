@@ -1,13 +1,13 @@
 #include <Novice.h>
 
-#include"HW_00/HW_00_01.h"
+#include"HW_00/HW_00_02.h"
 
-const char kWindowTitle[] = "LE2C_08_コウ_シキン_MT3_00_00";
+const char kWindowTitle[] = "LE2C_08_コウ_シキン_MT3_00_02";
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Novice::Initialize(kWindowTitle, 1280, 720);
 
-	MT3::HW_00_01 hw_00_01{};
+	MT3::HW_00_02 hw_00_02{};
 
 	char keys[256]{ 0 };
 	char preKeys[256]{ 0 };
@@ -18,7 +18,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		memcpy(preKeys, keys, 256);
 		Novice::GetHitKeyStateAll(keys);
 
-		hw_00_01.Print();
+		hw_00_02.Print();
 
 		Novice::EndFrame();
 
