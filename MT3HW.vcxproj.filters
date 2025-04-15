@@ -17,17 +17,11 @@
     <Filter Include="Src">
       <UniqueIdentifier>{d6a66835-7c0e-4e8f-ae2f-d452c002a87f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="HW_00">
-      <UniqueIdentifier>{e29e7350-a9bd-45e9-8650-88e3d5505984}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="C:\KamataEngine\Adapter\Novice.cpp">
       <Filter>KamataEngine\Adapter</Filter>
-    </ClCompile>
-    <ClCompile Include="HW_00\HW_00_02.cpp">
-      <Filter>HW_00</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -112,13 +106,7 @@
     <ClInclude Include="C:\KamataEngine\DirectXGame\2d\ImGuiManager.h">
       <Filter>KamataEngine\Include</Filter>
     </ClInclude>
-    <ClInclude Include="Src\MT3Vec3.h">
-      <Filter>Src</Filter>
-    </ClInclude>
-    <ClInclude Include="HW_00\HW_00_02.h">
-      <Filter>HW_00</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\MT3Mat4.h">
+    <ClInclude Include="Src\MT3.h">
       <Filter>Src</Filter>
     </ClInclude>
   </ItemGroup>
