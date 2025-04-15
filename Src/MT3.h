@@ -385,6 +385,31 @@ namespace MT3 {
 				0.0f, 0.0f, 0.0f, 1.0f,
 			};
 		}
+
+		static inline Mat4 MakeRotateXMatrix(float rx_) {
+			return {
+				1.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, std::cos(rx_), std::sin(rx_), 0.0f,
+				0.0f, -std::sin(rx_), std::cos(rx_), 0.0f,
+				0.0f, 0.0f, 0.0f, 1.0f,
+			};
+		}
+		static inline Mat4 MakeRotateYMatrix(float ry_) {
+			return {
+				std::cos(ry_), 0.0f, -std::sin(ry_), 0.0f,
+				0.0f, 1.0f, 0.0f, 0.0f,
+				std::sin(ry_), 0.0f, std::cos(ry_), 0.0f,
+				0.0f, 0.0f, 0.0f, 1.0f,
+			};
+		}
+		static inline Mat4 MakeRotateZMatrix(float rz_) {
+			return {
+				std::cos(rz_), std::sin(rz_), 0.0f, 0.0f,
+				-std::sin(rz_), std::cos(rz_), 0.0f, 0.0f,
+				0.0f, 0.0f, 1.0f, 0.0f,
+				0.0f, 0.0f, 0.0f, 1.0f,
+			};
+		}
 	};
 
 	inline Vec3 operator*(const Vec3& v_, const Mat4& m_) {
