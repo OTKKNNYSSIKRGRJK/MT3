@@ -449,6 +449,47 @@ namespace MT3 {
 
 			return srt;
 		}
+
+	public:
+		static inline Mat4 MakePerspectiveFOV(float fovY_, float aspectRatio_, float nearClip_, float farClip_) {
+			const float cotTheta{ 1.0f / std::tanf(fovY_ * 0.5f) };
+			const float inv_FrustumHeight{ 1.0f / (farClip_ - nearClip_) };
+			return Mat4{
+				(1.0f / aspectRatio_) * cotTheta, 0.0f, 0.0f, 0.0f,
+				0.0f, cotTheta, 0.0f, 0.0f,
+				0.0f, 0.0f, farClip_ * inv_FrustumHeight, 1.0f,
+				0.0f, 0.0f, -nearClip_ * farClip_ * inv_FrustumHeight, 0.0f,
+			};
+		}
+
+		static inline Mat4 MakeOrthographic(
+			float l_, float t_, float r_, float b_,
+			float zn_, float zf_
+		) {
+			const float inv_W{ 1.0f / (r_ - l_) };
+			const float inv_H{ 1.0f / (t_ - b_) };
+			const float inv_D{ 1.0f / (zf_ - zn_) };
+
+			return Mat4{
+				2.0f * inv_W, 0.0f, 0.0f, 0.0f,
+				0.0f, 2.0f * inv_H, 0.0f, 0.0f,
+				0.0f, 0.0f, inv_D, 0.0f,
+				-(l_ + r_) * inv_W, -(t_ + b_) * inv_H, -zn_ * inv_D, 1.0f,
+			};
+		}
+
+		static inline Mat4 MakeViewport(
+			float left_, float top_,
+			float width_, float height_,
+			float minDepth_, float maxDepth_
+		) {
+			return Mat4{
+				width_ * 0.5f, 0.0f, 0.0f, 0.0f,
+				0.0f, -height_ * 0.5f, 0.0f, 0.0f,
+				0.0f, 0.0f, maxDepth_ - minDepth_, 0.0f,
+				left_ + width_ * 0.5f, top_ + height_ * 0.5f, minDepth_, 1.0f,
+			};
+		}
 	};
 
 	inline Vec3 operator*(const Vec3& v_, const Mat4& m_) {
