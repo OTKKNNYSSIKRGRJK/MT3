@@ -3,7 +3,7 @@
 #include"Src/MT3.h"
 #include<format>
 
-const char kWindowTitle[] = "LE2C_08_コウ_シキン_MT3_00_03";
+const char kWindowTitle[] = "LE2C_08_コウ_シキン_MT3_00_04";
 
 namespace MT3 {
 	namespace {
