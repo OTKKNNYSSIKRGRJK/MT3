@@ -20,7 +20,7 @@ namespace MT3 {
 		Mat4::Subtract(CalcResults_[1], M1_, M2_);
 		Mat4::Multiply(CalcResults_[2], M1_, M2_);
 		Mat4::Invert(CalcResults_[3], M1_);
-		Mat4::Invert(CalcResults_[4], M1_);
+		Mat4::Invert(CalcResults_[4], M2_);
 		Mat4::Transpose(CalcResults_[5], M1_);
 		Mat4::Transpose(CalcResults_[6], M2_);
 	}
