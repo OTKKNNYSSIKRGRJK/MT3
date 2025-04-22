@@ -332,7 +332,7 @@ namespace MT3 {
 		Mat4 VPVp_{};
 		Mat4 Inv_VPVp_{};
 
-		Sphere Sphere_{ 0.25f, 6U, 12U };
+		Sphere Sphere_{ 3.0f, 12U, 24U };
 
 		Grid Grid_{};
 
