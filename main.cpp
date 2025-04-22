@@ -90,31 +90,32 @@ namespace MT3 {
 			#if defined(_DEBUG)
 			ImGui::Begin("Corners");
 			{
-				ImGui::BeginTable("CornerPosTable", 3, ImGuiTableFlags_BordersOuterH | ImGuiTableFlags_BordersV);
-				ImGui::TableSetupColumn("#", 0, 0.1f);
-				ImGui::TableSetupColumn("Screen Pos");
-				ImGui::TableSetupColumn("World Pos");
-				ImGui::TableHeadersRow();
-				for (int row{ 0 }; row < 4; ++row) {
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0);
-					ImGui::Text("%d", row);
-					ImGui::TableSetColumnIndex(1);
-					ImGui::Text(
-						"(%5.0f, %5.0f, %10f)",
-						cornerScreenPoses[row].x,
-						cornerScreenPoses[row].y,
-						cornerScreenPoses[row].z
-					);
-					ImGui::TableSetColumnIndex(2);
-					ImGui::Text(
-						"(%10f, %.0f, %10f)",
-						cornerWorldPoses[row].x,
-						cornerWorldPoses[row].y,
-						cornerWorldPoses[row].z
-					);
+				if (ImGui::BeginTable("CornerPosTable", 3, ImGuiTableFlags_BordersOuterH | ImGuiTableFlags_BordersV)) {
+					ImGui::TableSetupColumn("#", 0, 0.1f);
+					ImGui::TableSetupColumn("Screen Pos");
+					ImGui::TableSetupColumn("World Pos");
+					ImGui::TableHeadersRow();
+					for (int row{ 0 }; row < 4; ++row) {
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0);
+						ImGui::Text("%d", row);
+						ImGui::TableSetColumnIndex(1);
+						ImGui::Text(
+							"(%5.0f, %5.0f, %10f)",
+							cornerScreenPoses[row].x,
+							cornerScreenPoses[row].y,
+							cornerScreenPoses[row].z
+						);
+						ImGui::TableSetColumnIndex(2);
+						ImGui::Text(
+							"(%10f, %.0f, %10f)",
+							cornerWorldPoses[row].x,
+							cornerWorldPoses[row].y,
+							cornerWorldPoses[row].z
+						);
+					}
+					ImGui::EndTable();
 				}
-				ImGui::EndTable();
 			}
 			ImGui::End();
 			#endif
@@ -275,6 +276,8 @@ namespace MT3 {
 
 		const Mat4* VPVp_{ nullptr };
 
+		uint32_t RGBA_{ 0xFFDFAF7F };
+
 		Sphere(float radius_ = 3.0f, uint32_t div1_ = 12U, uint32_t div2_ = 24U) {
 			CreateSphereGrid(Vertices_, IndexPairs_, { 0.0f, 0.0f, 0.0f }, radius_, div1_, div2_);
 		}
@@ -300,7 +303,6 @@ namespace MT3 {
 
 			Novice::SetBlendMode(kBlendModeNormal);
 
-			uint32_t color = 0xFFDFAF7F;
 			for (const auto& indexPair : IndexPairs_) {
 				const Vec3 st{ Vertices_[indexPair.first] * WVPVp_ };
 				const Vec3 ed{ Vertices_[indexPair.second] * WVPVp_ };
@@ -309,7 +311,7 @@ namespace MT3 {
 					static_cast<int>(st.y),
 					static_cast<int>(ed.x),
 					static_cast<int>(ed.y),
-					color
+					RGBA_
 				);
 			}
 		}
@@ -330,7 +332,7 @@ namespace MT3 {
 		Mat4 VPVp_{};
 		Mat4 Inv_VPVp_{};
 
-		Sphere Sphere_{};
+		Sphere Sphere_{ 0.25f, 6U, 12U };
 
 		Grid Grid_{};
 
