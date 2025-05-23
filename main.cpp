@@ -155,10 +155,12 @@ namespace MT3 {
 
 	class HW_02_00 {
 	private:
-		Mat4 CameraRotateMat_{ Mat4::MakeRotateMatrix({ 0.35f, -0.1f, 0.0f }) };
-		Vec3 CameraTranslate_{ 1.0f, 4.0f, -10.0f };
+		Vec3 CameraRotate_{ 0.1f, 0.0f, 0.0f };
+		Vec3 CameraTranslate_{ 0.0f, 1.0f, -10.0f };
+		//Vec3 CameraRotate_{ 0.35f, -0.1f, 0.0f };
+		//Vec3 CameraTranslate_{ 1.0f, 4.0f, -10.0f };
 
-		//Mat4 Camera_{};
+		Mat4 Camera_{};
 
 		Mat4 View_{};
 		Mat4 Projection_{ Mat4::MakePerspectiveFOV(0.45f, 1280.0f / 720.0f, 0.1f, 100.0f) };
@@ -166,7 +168,6 @@ namespace MT3 {
 		Mat4 PVp_{};
 		//Mat4 Inv_PVp_{};
 		Mat4 VPVp_{};
-		Mat4 Inv_VPVp_{};
 
 		LineSegment Seg_{ .Origin{ -2.0f, -1.0f, 0.0f }, .Diff{ 3.0f, 2.0f, 2.0f } };
 
@@ -187,22 +188,21 @@ namespace MT3 {
 			ProjectedPoint_.VPVp_ = &VPVp_;
 			NearestPoint_.VPVp_ = &VPVp_;
 			Grid_.VPVp_ = &VPVp_;
-			Grid_.Inv_VPVp_ = &Inv_VPVp_;
 
 			Point_.Translate_ = { -1.5f, 0.6f, 0.6f };
 			Point_.RGBA_ = 0xFFDF7FFF;
 			ProjectedPoint_.RGBA_ = 0xFFDF7F3F;
 			NearestPoint_.RGBA_ = 0xFFFFFFFF;
 
-			Mat4 camera{ CameraRotateMat_ };
+			/*Mat4 camera{ CameraRotateMat_ };
 			camera[3][0] = CameraTranslate_.x;
 			camera[3][1] = CameraTranslate_.y;
 			camera[3][2] = CameraTranslate_.z;
-			Mat4::Invert(View_, camera);
+			Mat4::Invert(View_, camera);*/
 		}
 
 		void Update() {
-			Novice::GetHitKeyStateAll(Keys_);
+			/*Novice::GetHitKeyStateAll(Keys_);
 			Vec3 tmpT{}, tmpR{};
 			if (Keys_[DIK_UP]) { tmpT.z = -0.05f; }
 			if (Keys_[DIK_DOWN]) { tmpT.z = 0.05f; }
@@ -218,18 +218,33 @@ namespace MT3 {
 			Mat4::Invert(inv_Rotate, rotate);
 			Mat4::Multiply(View_, View_, inv_Rotate);
 			View_[3][0] += tmpT.x;
-			View_[3][2] += tmpT.z;
+			View_[3][2] += tmpT.z;*/
+
+			ImGui::Begin("MT3");
+			{
+				ImGui::SeparatorText("Camera");
+				ImGui::DragFloat3("Rotate##Camera", CameraRotate_(), 0.01f);
+				ImGui::DragFloat3("Translate##Camera", CameraTranslate_(), 0.01f);
+			}
+			ImGui::End();
+
+			Camera_ = Mat4::MakeSRTMatrix(
+				{ 1.0f, 1.0f, 1.0f },
+				CameraRotate_,
+				CameraTranslate_
+			);
+			Mat4::Invert(View_, Camera_);
 			Mat4::Multiply(VPVp_, View_, PVp_);
-			Mat4::Invert(Inv_VPVp_, VPVp_);
 
 			#if defined(_DEBUG)
 			ImGui::Begin("MT3");
 			{
-				if (ImGui::CollapsingHeader("Projection of point on segment", ImGuiTreeNodeFlags_DefaultOpen)) {
-					ImGui::SeparatorText("Segment");
+				ImGui::SeparatorText("Projection of point on segment");
+				{
+					ImGui::BulletText("Segment");
 					ImGui::DragFloat3("Origin", Seg_.Origin(), 0.01f);
 					ImGui::DragFloat3("Diff", Seg_.Diff(), 0.01f);
-					ImGui::SeparatorText("Point");
+					ImGui::BulletText("Point");
 					ImGui::DragFloat3("Pos", Point_.Translate_(), 0.01f);
 					ImGui::InputFloat3("Projected Pos", ProjectedPoint_.Translate_(), "%.3f", ImGuiInputTextFlags_ReadOnly);
 					ImGui::InputFloat3("Nearest Pos", NearestPoint_.Translate_(), "%.3f", ImGuiInputTextFlags_ReadOnly);
