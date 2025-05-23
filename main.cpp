@@ -1,12 +1,14 @@
 #include <Novice.h>
 
 #include"Src/MT3.h"
+#include"Src/MT3Grid.h"
 #include<format>
 #include<vector>
+#include<algorithm>
 
 #include<ImGui.h>
 
-const char kWindowTitle[] = "LE2C_08_コウ_シキン_MT3_01_02";
+const char kWindowTitle[] = "LE2C_08_コウ_シキン_MT3_02_00";
 
 namespace MT3 {
 	namespace {
@@ -19,190 +21,7 @@ namespace MT3 {
 			};
 		}
 		#endif
-
-		inline float GetWorldPosXGivenScreenPosX(const Mat4& t_, float worldZ_, float screenX_) {
-			return
-				(screenX_ * (worldZ_ * t_[2][3] + t_[3][3]) - (worldZ_ * t_[2][0] + t_[3][0])) /
-				(t_[0][0] - screenX_ * t_[0][3]);
-		}
-		inline float GetWorldPosXGivenScreenPosY(const Mat4& t_, float worldZ_, float screenY_) {
-			return
-				(screenY_ * (worldZ_ * t_[2][3] + t_[3][3]) - (worldZ_ * t_[2][1] + t_[3][1])) /
-				(t_[0][1] - screenY_ * t_[0][3]);
-		}
-		inline float GetWorldPosZGivenScreenPosX(const Mat4& t_, float worldX_, float screenX_) {
-			return
-				(screenX_ * (worldX_ * t_[0][3] + t_[3][3]) - (worldX_ * t_[0][0] + t_[3][0])) /
-				(t_[2][0] - screenX_ * t_[2][3]);
-		}
-		inline float GetWorldPosZGivenScreenPosY(const Mat4& t_, float worldX_, float screenY_) {
-			return
-				(screenY_ * (worldX_ * t_[0][3] + t_[3][3]) - (worldX_ * t_[0][1] + t_[3][1])) /
-				(t_[2][1] - screenY_ * t_[2][3]);
-		}
-
-		using GetWorldPosFunc = float(*)(const Mat4&, float, float);
 	}
-
-	struct Grid {
-		const Mat4* VPVp_{ nullptr };
-		const Mat4* Inv_VPVp_{ nullptr };
-
-	private:
-		struct {
-			UINT CornerIndexList[4];
-			UINT IsScanningHorizontalEdge;
-			UINT IsScanningWorldPosZ;
-			UINT RGBA;
-		} ScanEdgeParams_[8]{
-			{ { 0, 2, 3, 1, }, 1, 0, 0x9F3F3FFF },
-			{ { 1, 0, 2, 3, }, 0, 0, 0x9F3F3FFF },
-			{ { 3, 1, 0, 2, }, 1, 0, 0x9F3F3FFF },
-			{ { 2, 3, 1, 0, }, 0, 0, 0x9F3F3FFF },
-			{ { 0, 2, 3, 1, }, 1, 1, 0x3F3F9FFF },
-			{ { 1, 0, 2, 3, }, 0, 1, 0x3F3F9FFF },
-			{ { 3, 1, 0, 2, }, 1, 1, 0x3F3F9FFF },
-			{ { 2, 3, 1, 0, }, 0, 1, 0x3F3F9FFF },
-		};
-
-	public:
-		void Draw() {
-			Vec3 screenPoses[2]{};
-
-			static Vec3 cornerScreenPoses[4]{
-				{ 0.0f, 0.0f, 0.0f },
-				{ 1280.0f, 0.0f, 0.0f },
-				{ 0.0f, 720.0f, 0.0f },
-				{ 1280.0f, 720.0f, 0.0f }
-			};
-			static Vec3 cornerWorldPoses[4]{};
-			const float minusInv_Inv_VPVp21{ -1.0f / (*Inv_VPVp_)[2][1] };
-			for (int i{ 0 }; i < 4; ++i) {
-				cornerScreenPoses[i].z =
-					minusInv_Inv_VPVp21 * (
-						cornerScreenPoses[i].x * (*Inv_VPVp_)[0][1] +
-						cornerScreenPoses[i].y * (*Inv_VPVp_)[1][1] +
-						(*Inv_VPVp_)[3][1]
-					);
-				cornerWorldPoses[i] = cornerScreenPoses[i] * (*Inv_VPVp_);
-			}
-
-			#if defined(_DEBUG)
-			ImGui::Begin("Corners");
-			{
-				if (ImGui::BeginTable("CornerPosTable", 3, ImGuiTableFlags_BordersOuterH | ImGuiTableFlags_BordersV)) {
-					ImGui::TableSetupColumn("#", 0, 0.1f);
-					ImGui::TableSetupColumn("Screen Pos");
-					ImGui::TableSetupColumn("World Pos");
-					ImGui::TableHeadersRow();
-					for (int row{ 0 }; row < 4; ++row) {
-						ImGui::TableNextRow();
-						ImGui::TableSetColumnIndex(0);
-						ImGui::Text("%d", row);
-						ImGui::TableSetColumnIndex(1);
-						ImGui::Text(
-							"(%5.0f, %5.0f, %10f)",
-							cornerScreenPoses[row].x,
-							cornerScreenPoses[row].y,
-							cornerScreenPoses[row].z
-						);
-						ImGui::TableSetColumnIndex(2);
-						ImGui::Text(
-							"(%10f, %.0f, %10f)",
-							cornerWorldPoses[row].x,
-							cornerWorldPoses[row].y,
-							cornerWorldPoses[row].z
-						);
-					}
-					ImGui::EndTable();
-				}
-			}
-			ImGui::End();
-			#endif
-
-			static auto ScanEdge{
-				[](UINT indices_[4], UINT isScanningHorizontalEdge_, UINT isScanningWorldPosZ_, const Mat4& vpVp_, UINT rgba_) {
-					static GetWorldPosFunc GetWorldPosZFuncs[4]{
-						GetWorldPosZGivenScreenPosX,
-						GetWorldPosZGivenScreenPosY,
-						GetWorldPosXGivenScreenPosX,
-						GetWorldPosXGivenScreenPosY,
-					};
-
-					Vec3 screenPoses[2]{};
-
-					isScanningHorizontalEdge_ = !!(isScanningHorizontalEdge_);
-					isScanningWorldPosZ_ = !!(isScanningWorldPosZ_);
-					float scanComp{ 
-						std::ceil(
-							(isScanningWorldPosZ_) ?
-							(cornerWorldPoses[indices_[0]].z) :
-							(cornerWorldPoses[indices_[0]].x)
-						)
-					};
-					for (int i{ 1 }; i < 4; ++i) {
-						float thresholdComp{
-							(isScanningWorldPosZ_) ?
-							(std::min<float>(cornerWorldPoses[indices_[3]].z, cornerWorldPoses[indices_[i]].z)) :
-							(std::min<float>(cornerWorldPoses[indices_[3]].x, cornerWorldPoses[indices_[i]].x))
-						};
-						while (scanComp <= thresholdComp) {
-							const float stComp{
-								GetWorldPosZFuncs[isScanningHorizontalEdge_ + 2 * isScanningWorldPosZ_](
-									vpVp_, scanComp,
-									(isScanningHorizontalEdge_) ?
-									(cornerScreenPoses[indices_[0]].y) :
-									(cornerScreenPoses[indices_[0]].x)
-								)
-							};
-							const float edComp{
-								GetWorldPosZFuncs[((isScanningHorizontalEdge_ + i) & 1) + 2 * isScanningWorldPosZ_](
-									vpVp_, scanComp,
-									((isScanningHorizontalEdge_ + i) & 1) ?
-									(cornerScreenPoses[indices_[i]].y) :
-									(cornerScreenPoses[indices_[i]].x)
-								)
-							};
-							const Vec3 st{ (isScanningWorldPosZ_) ? (stComp) : (scanComp), 0.0f, (isScanningWorldPosZ_) ? (scanComp) : (stComp) };
-							const Vec3 ed{ (isScanningWorldPosZ_) ? (edComp) : (scanComp), 0.0f, (isScanningWorldPosZ_) ? (scanComp) : (edComp) };
-							screenPoses[0] = st * vpVp_;
-							screenPoses[1] = ed * vpVp_;
-							if (screenPoses[0].z < 0.9999f || screenPoses[1].z < 0.9999f) {
-								Novice::DrawLine(
-									static_cast<int>(screenPoses[0].x),
-									static_cast<int>(screenPoses[0].y),
-									static_cast<int>(screenPoses[1].x),
-									static_cast<int>(screenPoses[1].y),
-									rgba_
-								);
-							}
-							if (scanComp == 0.0f) {
-								Novice::DrawLine(
-									static_cast<int>(screenPoses[0].x),
-									static_cast<int>(screenPoses[0].y),
-									static_cast<int>(screenPoses[1].x),
-									static_cast<int>(screenPoses[1].y),
-									0xFFFFFF3F
-								);
-							}
-							scanComp += 1.0f;
-						}
-					}
-				}
-			};
-
-			Novice::SetBlendMode(kBlendModeAdd);
-			for (int i{ 0 }; i < 8; ++i) {
-				ScanEdge(
-					ScanEdgeParams_[i].CornerIndexList,
-					ScanEdgeParams_[i].IsScanningHorizontalEdge,
-					ScanEdgeParams_[i].IsScanningWorldPosZ,
-					*VPVp_,
-					ScanEdgeParams_[i].RGBA
-				);
-			}
-		}
-	};
 
 	namespace {
 		constexpr float Pi{ 3.14159265f };
@@ -283,7 +102,7 @@ namespace MT3 {
 		}
 
 		void Update() {
-			#if defined(_DEBUG)
+			/*#if defined(_DEBUG)
 			ImGui::Begin("Sphere");
 			{
 				ImGui::DragFloat3("Scale", Scale_(), 0.01f);
@@ -291,14 +110,11 @@ namespace MT3 {
 				ImGui::DragFloat3("Translate", Translate_(), 0.01f);
 			}
 			ImGui::End();
-			#endif
-
-			//Rotate_.x += 0.007f;
-			Rotate_.y += 0.01f;
+			#endif*/
+			World_ = Mat4::MakeSRTMatrix(Scale_, Rotate_, Translate_);
 		}
 
 		void Draw() {
-			World_ = Mat4::MakeSRTMatrix(Scale_, Rotate_, Translate_);
 			Mat4::Multiply(WVPVp_, World_, *VPVp_);
 
 			Novice::SetBlendMode(kBlendModeNormal);
@@ -317,60 +133,143 @@ namespace MT3 {
 		}
 	};
 
-	class HW_01_02 {
+	struct LineSegment {
+		Vec3 Origin;
+		Vec3 Diff;
+	};
+
+	inline Vec3 ProjectPointOntoLine(const Vec3& p_, const LineSegment& l_) {
+		return
+			l_.Origin +
+			(Vec3::Dot(l_.Diff, (p_ - l_.Origin)) / Vec3::Dot(l_.Diff, l_.Diff)) *
+			l_.Diff;
+	}
+	inline Vec3 FindNearestPointOnSegment(const Vec3& p_, const LineSegment& seg_) {
+		return
+			seg_.Origin +
+			std::clamp(
+				Vec3::Dot(seg_.Diff, (p_ - seg_.Origin)) / Vec3::Dot(seg_.Diff, seg_.Diff),
+				0.0f, 1.0f
+			) * seg_.Diff;
+	}
+
+	class HW_02_00 {
 	private:
-		Vec3 CameraScale_{ 1.0f, 1.0f, 1.0f };
-		Vec3 CameraRotate_{ 0.35f, -0.1f, 0.0f };
-		Vec3 CameraTranslate_{ 2.0f, 10.0f, -30.0f };
-		Mat4 Camera_{};
+		Mat4 CameraRotateMat_{ Mat4::MakeRotateMatrix({ 0.35f, -0.1f, 0.0f }) };
+		Vec3 CameraTranslate_{ 1.0f, 4.0f, -10.0f };
+
+		//Mat4 Camera_{};
 
 		Mat4 View_{};
 		Mat4 Projection_{ Mat4::MakePerspectiveFOV(0.45f, 1280.0f / 720.0f, 0.1f, 100.0f) };
 		Mat4 Viewport_{ Mat4::MakeViewport(0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 1.0f) };
 		Mat4 PVp_{};
-		Mat4 Inv_PVp_{};
+		//Mat4 Inv_PVp_{};
 		Mat4 VPVp_{};
 		Mat4 Inv_VPVp_{};
 
-		Sphere Sphere_{ 3.0f, 12U, 24U };
+		LineSegment Seg_{ .Origin{ -2.0f, -1.0f, 0.0f }, .Diff{ 3.0f, 2.0f, 2.0f } };
+
+		Sphere Point_{ 0.0625f, 6U, 12U };
+		Sphere ProjectedPoint_{ 0.0625f, 6U, 12U };
+		Sphere NearestPoint_{ 0.0625f, 6U, 12U };
 
 		Grid Grid_{};
 
-	public:
-		HW_01_02() {
-			Mat4::Multiply(PVp_, Projection_, Viewport_);
-			Mat4::Invert(Inv_PVp_, PVp_);
+		char Keys_[256]{};
 
-			Sphere_.VPVp_ = &VPVp_;
+	public:
+		HW_02_00() {
+			Mat4::Multiply(PVp_, Projection_, Viewport_);
+			//Mat4::Invert(Inv_PVp_, PVp_);
+
+			Point_.VPVp_ = &VPVp_;
+			ProjectedPoint_.VPVp_ = &VPVp_;
+			NearestPoint_.VPVp_ = &VPVp_;
 			Grid_.VPVp_ = &VPVp_;
 			Grid_.Inv_VPVp_ = &Inv_VPVp_;
+
+			Point_.Translate_ = { -1.5f, 0.6f, 0.6f };
+			Point_.RGBA_ = 0xFFDF7FFF;
+			ProjectedPoint_.RGBA_ = 0xFFDF7F3F;
+			NearestPoint_.RGBA_ = 0xFFFFFFFF;
+
+			Mat4 camera{ CameraRotateMat_ };
+			camera[3][0] = CameraTranslate_.x;
+			camera[3][1] = CameraTranslate_.y;
+			camera[3][2] = CameraTranslate_.z;
+			Mat4::Invert(View_, camera);
 		}
 
 		void Update() {
+			Novice::GetHitKeyStateAll(Keys_);
+			Vec3 tmpT{}, tmpR{};
+			if (Keys_[DIK_UP]) { tmpT.z = -0.05f; }
+			if (Keys_[DIK_DOWN]) { tmpT.z = 0.05f; }
+			if (Keys_[DIK_LEFT]) { tmpT.x = 0.05f; }
+			if (Keys_[DIK_RIGHT]) { tmpT.x = -0.05f; }
+			if (Keys_[DIK_W]) { tmpR.x = -0.005f; }
+			if (Keys_[DIK_S]) { tmpR.x = 0.005f; }
+			if (Keys_[DIK_A]) { tmpR.y = -0.005f; }
+			if (Keys_[DIK_D]) { tmpR.y = 0.005f; }
+			
+			Mat4&& rotate{ Mat4::MakeRotateMatrix(tmpR) };
+			Mat4 inv_Rotate{};
+			Mat4::Invert(inv_Rotate, rotate);
+			Mat4::Multiply(View_, View_, inv_Rotate);
+			View_[3][0] += tmpT.x;
+			View_[3][2] += tmpT.z;
+			Mat4::Multiply(VPVp_, View_, PVp_);
+			Mat4::Invert(Inv_VPVp_, VPVp_);
+
 			#if defined(_DEBUG)
-			ImGui::Begin("Camera");
+			ImGui::Begin("MT3");
 			{
-				ImGui::DragFloat3("Rotate", CameraRotate_(), 0.01f);
-				ImGui::DragFloat3("Translate", CameraTranslate_(), 0.01f);
+				if (ImGui::CollapsingHeader("Projection of point on segment", ImGuiTreeNodeFlags_DefaultOpen)) {
+					ImGui::SeparatorText("Segment");
+					ImGui::DragFloat3("Origin", Seg_.Origin(), 0.01f);
+					ImGui::DragFloat3("Diff", Seg_.Diff(), 0.01f);
+					ImGui::SeparatorText("Point");
+					ImGui::DragFloat3("Pos", Point_.Translate_(), 0.01f);
+					ImGui::InputFloat3("Projected Pos", ProjectedPoint_.Translate_(), "%.3f", ImGuiInputTextFlags_ReadOnly);
+					ImGui::InputFloat3("Nearest Pos", NearestPoint_.Translate_(), "%.3f", ImGuiInputTextFlags_ReadOnly);
+				}
 			}
 			ImGui::End();
 			#endif
 
-			Camera_ = Mat4::MakeSRTMatrix(
-				CameraScale_,
-				CameraRotate_,
-				CameraTranslate_
-			);
-			Mat4::Invert(View_, Camera_);
-			Mat4::Multiply(VPVp_, View_, PVp_);
-			Mat4::Multiply(Inv_VPVp_, Inv_PVp_, Camera_);
+			Point_.Update();
 
-			Sphere_.Update();
+			ProjectedPoint_.Translate_ = ProjectPointOntoLine(Point_.Translate_, Seg_);
+			ProjectedPoint_.Update();
+			NearestPoint_.Translate_ = FindNearestPointOnSegment(Point_.Translate_, Seg_);
+			NearestPoint_.Update();
 		}
 
 		void Draw() {
 			Grid_.Draw();
-			Sphere_.Draw();
+			Point_.Draw();
+
+			ProjectedPoint_.Draw();
+			Vec3 st{ Seg_.Origin * VPVp_ };
+			Vec3 ed{ ProjectedPoint_.Translate_ * VPVp_ };
+			Novice::DrawLine(
+				static_cast<int>(st.x),
+				static_cast<int>(st.y),
+				static_cast<int>(ed.x),
+				static_cast<int>(ed.y),
+				0xFFDF7F3F
+			);
+
+			NearestPoint_.Draw();
+			ed = (Seg_.Origin + Seg_.Diff) * VPVp_;
+			Novice::DrawLine(
+				static_cast<int>(st.x),
+				static_cast<int>(st.y),
+				static_cast<int>(ed.x),
+				static_cast<int>(ed.y),
+				0xFFFFFFFF
+			);
 		}
 	};
 }
@@ -381,7 +280,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	char keys[256]{ 0 };
 	char preKeys[256]{ 0 };
 
-	MT3::HW_01_02 hw{};
+	MT3::HW_02_00 hw{};
 
 	while (Novice::ProcessMessage() == 0) {
 		Novice::BeginFrame();

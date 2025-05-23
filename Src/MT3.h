@@ -410,6 +410,30 @@ namespace MT3 {
 				0.0f, 0.0f, 0.0f, 1.0f,
 			};
 		}
+		static inline Mat4 MakeRotateMatrix(const Vec3& r_) {
+			float
+				cosAlpha{ std::cos(r_.x) },
+				sinAlpha{ std::sin(r_.x) },
+				cosBeta{ std::cos(r_.y) },
+				sinBeta{ std::sin(r_.y) },
+				cosGamma{ std::cos(r_.z) },
+				sinGamma{ std::sin(r_.z) };
+			return {
+				cosBeta * cosGamma,
+				cosBeta * sinGamma,
+				-sinBeta,
+				0.0f,
+				sinAlpha * sinBeta * cosGamma - cosAlpha * sinGamma,
+				sinAlpha * sinBeta * sinGamma + cosAlpha * cosGamma,
+				sinAlpha * cosBeta,
+				0.0f,
+				cosAlpha * sinBeta * cosGamma + sinAlpha * sinGamma,
+				cosAlpha * sinBeta * sinGamma - sinAlpha * cosGamma,
+				cosAlpha * cosBeta,
+				0.0f,
+				0.0f, 0.0f, 0.0f, 1.0f,
+			};
+		}
 
 		static inline Mat4 MakeSRTMatrix(
 			const Vec3& scale_,
@@ -417,12 +441,12 @@ namespace MT3 {
 			const Vec3& translate_
 		) {
 			float
-				cosAlpha{ std::cos(rotate_.Entries_[0]) },
-				sinAlpha{ std::sin(rotate_.Entries_[0]) },
-				cosBeta{ std::cos(rotate_.Entries_[1]) },
-				sinBeta{ std::sin(rotate_.Entries_[1]) },
-				cosGamma{ std::cos(rotate_.Entries_[2]) },
-				sinGamma{ std::sin(rotate_.Entries_[2]) };
+				cosAlpha{ std::cos(rotate_.x) },
+				sinAlpha{ std::sin(rotate_.x) },
+				cosBeta{ std::cos(rotate_.y) },
+				sinBeta{ std::sin(rotate_.y) },
+				cosGamma{ std::cos(rotate_.z) },
+				sinGamma{ std::sin(rotate_.z) };
 
 			Mat4 srt{
 				cosBeta * cosGamma,
