@@ -9,16 +9,16 @@ namespace MT3 {
 		
 		Vec3 st{}, ed{};
 
-		for (int i = -(Num_CellsAlongXAxis >> 1); i <= (Num_CellsAlongXAxis >> 1); ++i) {
+		for (int i = -(Num_CellsAlongXAxis_ >> 1); i <= (Num_CellsAlongXAxis_ >> 1); ++i) {
 			st = Vec3{
 				CellWidth_ * i,
 				0.0f,
-				CellHeight_ * (-(Num_CellsAlongZAxis >> 1))
+				CellHeight_ * (-(Num_CellsAlongZAxis_ >> 1))
 			} * (*VPVp_);
 			ed = Vec3{
 				CellWidth_ * i,
 				0.0f,
-				CellHeight_ * (Num_CellsAlongZAxis >> 1)
+				CellHeight_ * (Num_CellsAlongZAxis_ >> 1)
 			} * (*VPVp_);
 			Novice::DrawLine(
 				static_cast<int>(st.x),
@@ -29,14 +29,14 @@ namespace MT3 {
 			);
 		}
 
-		for (int i = -(Num_CellsAlongZAxis >> 1); i <= (Num_CellsAlongZAxis >> 1); ++i) {
+		for (int i = -(Num_CellsAlongZAxis_ >> 1); i <= (Num_CellsAlongZAxis_ >> 1); ++i) {
 			st = Vec3{
-				CellWidth_* (-(Num_CellsAlongXAxis >> 1)),
+				CellWidth_* (-(Num_CellsAlongXAxis_ >> 1)),
 				0.0f,
 				CellHeight_* i
 			} * (*VPVp_);
 			ed = Vec3{
-				CellWidth_* (Num_CellsAlongXAxis >> 1),
+				CellWidth_* (Num_CellsAlongXAxis_ >> 1),
 				0.0f,
 				CellHeight_* i
 			} * (*VPVp_);
@@ -49,8 +49,8 @@ namespace MT3 {
 			);
 		}
 
-		st = Vec3{ CellWidth_ * (-(Num_CellsAlongXAxis >> 1)), 0.0f, 0.0f } * (*VPVp_);
-		ed = Vec3{ CellWidth_ * (Num_CellsAlongXAxis >> 1), 0.0f, 0.0f } * (*VPVp_);
+		st = Vec3{ CellWidth_ * (-(Num_CellsAlongXAxis_ >> 1)), 0.0f, 0.0f } * (*VPVp_);
+		ed = Vec3{ CellWidth_ * (Num_CellsAlongXAxis_ >> 1), 0.0f, 0.0f } * (*VPVp_);
 		Novice::DrawLine(
 			static_cast<int>(st.x),
 			static_cast<int>(st.y),
@@ -58,8 +58,8 @@ namespace MT3 {
 			static_cast<int>(ed.y),
 			0xFFDF7F3F
 		);
-		st = Vec3{ 0.0f, 0.0f, CellHeight_ * (-(Num_CellsAlongZAxis >> 1)) } * (*VPVp_);
-		ed = Vec3{ 0.0f, 0.0f, CellHeight_ * (Num_CellsAlongZAxis >> 1) } * (*VPVp_);
+		st = Vec3{ 0.0f, 0.0f, CellHeight_ * (-(Num_CellsAlongZAxis_ >> 1)) } * (*VPVp_);
+		ed = Vec3{ 0.0f, 0.0f, CellHeight_ * (Num_CellsAlongZAxis_ >> 1) } * (*VPVp_);
 		Novice::DrawLine(
 			static_cast<int>(st.x),
 			static_cast<int>(st.y),

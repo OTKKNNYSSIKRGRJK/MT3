@@ -8,7 +8,7 @@
 
 #include<ImGui.h>
 
-const char kWindowTitle[] = "LE2C_08_コウ_シキン_MT3_02_01";
+const char kWindowTitle[] = "LE2C_08_コウ_シキン_MT3_02_02";
 
 namespace MT3 {
 	namespace {
@@ -133,7 +133,62 @@ namespace MT3 {
 		}
 	};
 
-	class HW_02_01 {
+	Vec3 Perpendicular(const Vec3& v_) {
+		if (v_.x != 0.0f || v_.y != 0.0f) { return { -v_.y, v_.x, 0.0f }; }
+		return { 0.0f, -v_.z, v_.y };
+	}
+
+	struct Plane {
+		Vec3 Normal_;
+		float Distance_;
+	};
+
+	struct PlaneIndicator : public Plane {
+	public:
+		const Mat4* VPVp_{ nullptr };
+		float Scale_{ 3.0f };
+
+		void Draw() {
+			Vec3&& center = Distance_ * Normal_;
+			Vec3&& v0_P = Perpendicular(Normal_).Norm() * Scale_;
+			Vec3&& v1_P = Vec3::Cross(Normal_, v0_P);
+			Vec3 ps[4]{
+				(center + v0_P) * (*VPVp_),
+				(center - v1_P) * (*VPVp_),
+				(center + v1_P) * (*VPVp_),
+				(center - v0_P) * (*VPVp_),
+			};
+			Novice::DrawQuad(
+				static_cast<int>(ps[0].x), static_cast<int>(ps[0].y),
+				static_cast<int>(ps[1].x), static_cast<int>(ps[1].y),
+				static_cast<int>(ps[2].x), static_cast<int>(ps[2].y),
+				static_cast<int>(ps[3].x), static_cast<int>(ps[3].y),
+				0, 0, 1, 1, 0, 0xFFFFFF0F
+			);
+			Novice::DrawLine(
+				static_cast<int>(ps[0].x), static_cast<int>(ps[0].y),
+				static_cast<int>(ps[1].x), static_cast<int>(ps[1].y),
+				0xFFFFFFBF
+			);
+			Novice::DrawLine(
+				static_cast<int>(ps[1].x), static_cast<int>(ps[1].y),
+				static_cast<int>(ps[3].x), static_cast<int>(ps[3].y),
+				0xFFFFFFBF
+			);
+			Novice::DrawLine(
+				static_cast<int>(ps[3].x), static_cast<int>(ps[3].y),
+				static_cast<int>(ps[2].x), static_cast<int>(ps[2].y),
+				0xFFFFFFBF
+			);
+			Novice::DrawLine(
+				static_cast<int>(ps[2].x), static_cast<int>(ps[2].y),
+				static_cast<int>(ps[0].x), static_cast<int>(ps[0].y),
+				0xFFFFFFBF
+			);
+		}
+	};
+
+	class HW_02_02 {
 	private:
 		Vec3 CameraRotate_{ 0.5f, -0.5f, 0.0f };
 		Vec3 CameraTranslate_{ 5.0f, 6.0f, -10.0f };
@@ -147,44 +202,43 @@ namespace MT3 {
 		//Mat4 Inv_PVp_{};
 		Mat4 VPVp_{};
 
-		std::vector<Sphere> Spheres_{};
-		std::vector<float> Radii_{};
+		Sphere Sphere_{};
+		float SphereRadius_{};
+		PlaneIndicator Plane_{};
 
 		Grid Grid_{};
 
 		char Keys_[256]{};
 
-		bool IsCollided(const Sphere& s0_, const Sphere& s1_) {
-			auto&& p01{ s1_.Translate_ - s0_.Translate_ };
-			float sq_Dist = Vec3::Dot(p01, p01);
-			float sq_Sum_Raii = (s0_.Scale_.x + s1_.Scale_.x) * (s0_.Scale_.x + s1_.Scale_.x);
+		bool IsCollided(const Sphere& s_, const Plane& pl_) {
+			float dist = std::abs(Vec3::Dot(s_.Translate_, pl_.Normal_) - pl_.Distance_);
+			float radius = s_.Scale_.x;
 			#if defined(_DEBUG)
 			ImGui::Begin("MT3");
 			{
 				ImGui::SeparatorText("Collision");
-				ImGui::Text("Distance^2 = %f", sq_Dist);
-				ImGui::Text("(Sum of Radii)^2 = %f", sq_Sum_Raii);
+				ImGui::Text("Distance = %f", dist);
+				ImGui::Text("Radius of sphere = %f", radius);
 			}
 			ImGui::End();
 			#endif
-			return (sq_Dist <= sq_Sum_Raii);
+			return (dist <= radius);
 		}
 
 	public:
-		HW_02_01() {
+		HW_02_02() {
 			Mat4::Multiply(PVp_, Projection_, Viewport_);
 			//Mat4::Invert(Inv_PVp_, PVp_);
 
 			Grid_.VPVp_ = &VPVp_;
 
-			auto& sphere0 = Spheres_.emplace_back();
-			sphere0.VPVp_ = &VPVp_;
-			sphere0.Translate_ = { 1.0f, 0.0f, 3.0f };
-			auto& sphere1 = Spheres_.emplace_back();
-			sphere1.VPVp_ = &VPVp_;
-			sphere1.Translate_ = { -1.0f, 0.5f, -1.0f };
-			Radii_.emplace_back(1.0f);
-			Radii_.emplace_back(0.5f);
+			Sphere_.Translate_ = { -0.140f, -0.840f, 0.670f };
+			Sphere_.VPVp_ = &VPVp_;
+			SphereRadius_ = 1.5f;
+
+			Plane_.VPVp_ = &VPVp_;
+			Plane_.Normal_ = Vec3{ -0.967f, 0.237f, -0.097f }.Norm();
+			Plane_.Distance_ = 1.8f;
 		}
 
 		void Update() {
@@ -206,35 +260,48 @@ namespace MT3 {
 
 			#if defined(_DEBUG)
 			ImGui::Begin("MT3");
-			for (int i = 0; i < static_cast<int>(Spheres_.size()); ++i) {
-				ImGui::SeparatorText(std::format("Sphere #{}", i).data());
-				{
-					ImGui::DragFloat3(std::format("Center##Sphere#{}", i).data(), Spheres_[i].Translate_(), 0.01f);
-					ImGui::DragFloat(std::format("Radius##Sphere#{}", i).data(), &Radii_[i], 0.01f);
-				}
+			ImGui::SeparatorText("Sphere");
+			{
+				ImGui::DragFloat3("Center##Sphere", Sphere_.Translate_(), 0.01f);
+				ImGui::DragFloat("Radius##Sphere", &SphereRadius_, 0.01f);
+			}
+			ImGui::SeparatorText("Plane");
+			{
+				ImGui::DragFloat3("Normal##Plane", Plane_.Normal_(), 0.01f);
+				ImGui::DragFloat("Distance##Plane", &Plane_.Distance_, 0.01f);
 			}
 			ImGui::End();
 			#endif
 
-			for (int i = 0; i < static_cast<int>(Spheres_.size()); ++i) {
-				Spheres_[i].Scale_ = { Radii_[i], Radii_[i], Radii_[i] };
-				Spheres_[i].Update();
-			}
+			Sphere_.Scale_ = { SphereRadius_, SphereRadius_, SphereRadius_ };
+			Sphere_.Update();
 
-			if (IsCollided(Spheres_[0], Spheres_[1])) {
-				Spheres_[1].RGBA_ = 0xDF1F2F7F;
+			Plane_.Normal_ = Plane_.Normal_.Norm();
+
+			if (IsCollided(Sphere_, Plane_)) {
+				Sphere_.RGBA_ = 0xDF1F2F7F;
 			}
 			else {
-				Spheres_[1].RGBA_ = 0xFFFFFF7F;
+				Sphere_.RGBA_ = 0xFFFFFF7F;
 			}
 		}
 
 		void Draw() {
 			Grid_.Draw();
 
-			for (int i = 0; i < static_cast<int>(Spheres_.size()); ++i) {
-				Spheres_[i].Draw();
-			}
+			Sphere_.Draw();
+			Plane_.Draw();
+
+			Vec3 projOnPlane =
+				Sphere_.Translate_ +
+				(Plane_.Distance_ - Vec3::Dot(Sphere_.Translate_, Plane_.Normal_)) * Plane_.Normal_;
+			Vec3 p0 = Sphere_.Translate_ * VPVp_;
+			Vec3 p1 = projOnPlane * VPVp_;
+			Novice::DrawLine(
+				static_cast<int>(p0.x), static_cast<int>(p0.y),
+				static_cast<int>(p1.x), static_cast<int>(p1.y),
+				0xFFFF7F7F
+			);
 		}
 	};
 }
@@ -245,7 +312,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	char keys[256]{ 0 };
 	char preKeys[256]{ 0 };
 
-	MT3::HW_02_01 hw{};
+	MT3::HW_02_02 hw{};
 
 	while (Novice::ProcessMessage() == 0) {
 		Novice::BeginFrame();

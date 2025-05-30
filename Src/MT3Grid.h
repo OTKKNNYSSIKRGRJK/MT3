@@ -11,8 +11,8 @@ namespace MT3 {
 
 		float CellWidth_{ 1.0f };
 		float CellHeight_{ 1.0f };
-		int Num_CellsAlongXAxis{ 10 };
-		int Num_CellsAlongZAxis{ 10 };
+		int Num_CellsAlongXAxis_{ 10 };
+		int Num_CellsAlongZAxis_{ 10 };
 
 	public:
 		void Draw();
