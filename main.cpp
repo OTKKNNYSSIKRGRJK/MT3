@@ -8,7 +8,7 @@
 
 #include<ImGui.h>
 
-const char kWindowTitle[] = "LE2C_08_コウ_シキン_MT3_02_02";
+const char kWindowTitle[] = "LE2C_08_コウ_シキン_MT3_02_03";
 
 namespace MT3 {
 	namespace {
@@ -138,6 +138,12 @@ namespace MT3 {
 		return { 0.0f, -v_.z, v_.y };
 	}
 
+	struct LineSegment {
+		Vec3 Origin;
+		Vec3 Diff;
+		uint32_t RGBA;
+	};
+
 	struct Plane {
 		Vec3 Normal_;
 		float Distance_;
@@ -188,7 +194,7 @@ namespace MT3 {
 		}
 	};
 
-	class HW_02_02 {
+	class HW_02_03 {
 	private:
 		Vec3 CameraRotate_{ 0.5f, -0.5f, 0.0f };
 		Vec3 CameraTranslate_{ 5.0f, 6.0f, -10.0f };
@@ -202,39 +208,37 @@ namespace MT3 {
 		//Mat4 Inv_PVp_{};
 		Mat4 VPVp_{};
 
-		Sphere Sphere_{};
-		float SphereRadius_{};
+		LineSegment Seg_{};
 		PlaneIndicator Plane_{};
 
 		Grid Grid_{};
 
 		char Keys_[256]{};
 
-		bool IsCollided(const Sphere& s_, const Plane& pl_) {
-			float dist = std::abs(Vec3::Dot(s_.Translate_, pl_.Normal_) - pl_.Distance_);
-			float radius = s_.Scale_.x;
+		bool IsCollided(const LineSegment& sg_, const Plane& pl_) {
+			float dist0 = Vec3::Dot(sg_.Origin, pl_.Normal_) - pl_.Distance_;
+			float dist1 = Vec3::Dot(sg_.Origin + sg_.Diff, pl_.Normal_) - pl_.Distance_;
 			#if defined(_DEBUG)
 			ImGui::Begin("MT3");
 			{
 				ImGui::SeparatorText("Collision");
-				ImGui::Text("Distance = %f", dist);
-				ImGui::Text("Radius of sphere = %f", radius);
+				ImGui::Text("Distance btw. segment p0 & plane = %f", dist0);
+				ImGui::Text("Distance btw. segment p0 & plane = %f", dist1);
 			}
 			ImGui::End();
 			#endif
-			return (dist <= radius);
+			return (dist0 * dist1 <= 0.0f);
 		}
 
 	public:
-		HW_02_02() {
+		HW_02_03() {
 			Mat4::Multiply(PVp_, Projection_, Viewport_);
 			//Mat4::Invert(Inv_PVp_, PVp_);
 
 			Grid_.VPVp_ = &VPVp_;
 
-			Sphere_.Translate_ = { -0.140f, -0.840f, 0.670f };
-			Sphere_.VPVp_ = &VPVp_;
-			SphereRadius_ = 1.5f;
+			Seg_.Origin = { 0.0f, 0.0f, 0.0f };
+			Seg_.Diff = { 1.0f, 1.0f, 1.0f };
 
 			Plane_.VPVp_ = &VPVp_;
 			Plane_.Normal_ = Vec3{ -0.967f, 0.237f, -0.097f }.Norm();
@@ -260,10 +264,10 @@ namespace MT3 {
 
 			#if defined(_DEBUG)
 			ImGui::Begin("MT3");
-			ImGui::SeparatorText("Sphere");
+			ImGui::SeparatorText("Segment");
 			{
-				ImGui::DragFloat3("Center##Sphere", Sphere_.Translate_(), 0.01f);
-				ImGui::DragFloat("Radius##Sphere", &SphereRadius_, 0.01f);
+				ImGui::DragFloat3("Origin##Segment", Seg_.Origin(), 0.01f);
+				ImGui::DragFloat3("Diff##Segment", Seg_.Diff(), 0.01f);
 			}
 			ImGui::SeparatorText("Plane");
 			{
@@ -273,34 +277,42 @@ namespace MT3 {
 			ImGui::End();
 			#endif
 
-			Sphere_.Scale_ = { SphereRadius_, SphereRadius_, SphereRadius_ };
-			Sphere_.Update();
-
-			Plane_.Normal_ = Plane_.Normal_.Norm();
-
-			if (IsCollided(Sphere_, Plane_)) {
-				Sphere_.RGBA_ = 0xDF1F2F7F;
+			if (IsCollided(Seg_, Plane_)) {
+				Seg_.RGBA = 0xEF1F1FBF;
 			}
 			else {
-				Sphere_.RGBA_ = 0xFFFFFF7F;
+				Seg_.RGBA = 0xFFFFFFBF;
 			}
 		}
 
 		void Draw() {
 			Grid_.Draw();
 
-			Sphere_.Draw();
 			Plane_.Draw();
 
-			Vec3 projOnPlane =
-				Sphere_.Translate_ +
-				(Plane_.Distance_ - Vec3::Dot(Sphere_.Translate_, Plane_.Normal_)) * Plane_.Normal_;
-			Vec3 p0 = Sphere_.Translate_ * VPVp_;
-			Vec3 p1 = projOnPlane * VPVp_;
+			Vec3 p0 = Seg_.Origin;
+			Vec3 p1 = (Seg_.Origin + Seg_.Diff);
+			Vec3 proj0OnPlane = p0 + (Plane_.Distance_ - Vec3::Dot(p0, Plane_.Normal_)) * Plane_.Normal_;
+			Vec3 proj1OnPlane = p1 + (Plane_.Distance_ - Vec3::Dot(p1, Plane_.Normal_)) * Plane_.Normal_;
+
+			Vec3 screenP0 = p0 * VPVp_;
+			Vec3 screenP1 = p1 * VPVp_;
+			Vec3 screenProj0 = proj0OnPlane * VPVp_;
+			Vec3 screenProj1 = proj1OnPlane * VPVp_;
+
 			Novice::DrawLine(
-				static_cast<int>(p0.x), static_cast<int>(p0.y),
-				static_cast<int>(p1.x), static_cast<int>(p1.y),
-				0xFFFF7F7F
+				static_cast<int>(screenP0.x), static_cast<int>(screenP0.y),
+				static_cast<int>(screenP1.x), static_cast<int>(screenP1.y),
+				Seg_.RGBA
+			);
+			Novice::ScreenPrintf(
+				static_cast<int>(screenProj0.x) - 30, static_cast<int>(screenProj0.y) + 10,
+				"Projection of segment"
+			);
+			Novice::DrawLine(
+				static_cast<int>(screenProj0.x), static_cast<int>(screenProj0.y),
+				static_cast<int>(screenProj1.x), static_cast<int>(screenProj1.y),
+				0xFFBF1FBF
 			);
 		}
 	};
@@ -312,7 +324,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	char keys[256]{ 0 };
 	char preKeys[256]{ 0 };
 
-	MT3::HW_02_02 hw{};
+	MT3::HW_02_03 hw{};
 
 	while (Novice::ProcessMessage() == 0) {
 		Novice::BeginFrame();
