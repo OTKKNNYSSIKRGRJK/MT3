@@ -118,5 +118,17 @@
     <ClInclude Include="Src\Sphere.h">
       <Filter>Src</Filter>
     </ClInclude>
+    <ClInclude Include="Src\Triangle.h">
+      <Filter>Src</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Plane.h">
+      <Filter>Src</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Line.h">
+      <Filter>Src</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Collision.h">
+      <Filter>Src</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

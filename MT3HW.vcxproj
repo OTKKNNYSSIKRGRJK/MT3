@@ -140,9 +140,13 @@ xcopy C:\KamataEngine\DirectXGame\Resources "$(OutDirFullPath)NoviceResources" /
     <ClInclude Include="C:\KamataEngine\DirectXGame\input\Input.h" />
     <ClInclude Include="C:\KamataEngine\DirectXGame\scene\GameScene.h" />
     <ClInclude Include="C:\KamataEngine\Adapter\Novice.h" />
+    <ClInclude Include="Src\Collision.h" />
+    <ClInclude Include="Src\Line.h" />
     <ClInclude Include="Src\MT3Grid.h" />
     <ClInclude Include="Src\MT3.h" />
+    <ClInclude Include="Src\Plane.h" />
     <ClInclude Include="Src\Sphere.h" />
+    <ClInclude Include="Src\Triangle.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

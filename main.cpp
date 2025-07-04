@@ -9,7 +9,7 @@
 
 #include<ImGui.h>
 
-const char kWindowTitle[] = "LE2C_08_コウ_シキン_MT3_02_04";
+const char kWindowTitle[] = "LE2C_08_コウ_シキン_MT3_02_05";
 
 namespace MT3 {
 	namespace {
@@ -22,132 +22,9 @@ namespace MT3 {
 			};
 		}
 		#endif
-
-		Vec3 Perpendicular(const Vec3& v_) {
-			if (v_.x != 0.0f || v_.y != 0.0f) { return { -v_.y, v_.x, 0.0f }; }
-			return { 0.0f, -v_.z, v_.y };
-		}
 	}
 
-	struct LineSegment {
-		Vec3 Origin;
-		Vec3 Diff;
-		uint32_t RGBA;
-	};
-
-	struct LineSegmentIndicator : public LineSegment {
-		void Draw(const Mat4& vpVp_) const {
-			Vec3 p0 = Origin;
-			Vec3 p1 = (Origin + Diff);
-
-			Vec3 screenP0 = p0 * vpVp_;
-			Vec3 screenP1 = p1 * vpVp_;
-
-			Novice::DrawQuad(
-				static_cast<int>(screenP0.x) - 1, static_cast<int>(screenP0.y),
-				static_cast<int>(screenP1.x) - 1, static_cast<int>(screenP1.y),
-				static_cast<int>(screenP0.x) + 1, static_cast<int>(screenP0.y),
-				static_cast<int>(screenP1.x) + 1, static_cast<int>(screenP1.y),
-				0, 0, 1, 1, 0, RGBA
-			);
-			Novice::DrawQuad(
-				static_cast<int>(screenP0.x), static_cast<int>(screenP0.y) - 1,
-				static_cast<int>(screenP1.x), static_cast<int>(screenP1.y) - 1,
-				static_cast<int>(screenP0.x), static_cast<int>(screenP0.y) + 1,
-				static_cast<int>(screenP1.x), static_cast<int>(screenP1.y) + 1,
-				0, 0, 1, 1, 0, RGBA
-			);
-		}
-	};
-
-	struct Plane {
-		Vec3 Normal_;
-		float Distance_;
-	};
-
-	struct PlaneIndicator : public Plane {
-	public:
-		const Mat4* VPVp_{ nullptr };
-		float Scale_{ 3.0f };
-
-		void Draw() {
-			Vec3&& center = Distance_ * Normal_;
-			Vec3&& v0_P = Perpendicular(Normal_).Norm() * Scale_;
-			Vec3&& v1_P = Vec3::Cross(Normal_, v0_P);
-			Vec3 ps[4]{
-				(center + v0_P) * (*VPVp_),
-				(center - v1_P) * (*VPVp_),
-				(center + v1_P) * (*VPVp_),
-				(center - v0_P) * (*VPVp_),
-			};
-			Novice::DrawQuad(
-				static_cast<int>(ps[0].x), static_cast<int>(ps[0].y),
-				static_cast<int>(ps[1].x), static_cast<int>(ps[1].y),
-				static_cast<int>(ps[2].x), static_cast<int>(ps[2].y),
-				static_cast<int>(ps[3].x), static_cast<int>(ps[3].y),
-				0, 0, 1, 1, 0, 0xFFFFFF0F
-			);
-			Novice::DrawLine(
-				static_cast<int>(ps[0].x), static_cast<int>(ps[0].y),
-				static_cast<int>(ps[1].x), static_cast<int>(ps[1].y),
-				0xFFFFFFBF
-			);
-			Novice::DrawLine(
-				static_cast<int>(ps[1].x), static_cast<int>(ps[1].y),
-				static_cast<int>(ps[3].x), static_cast<int>(ps[3].y),
-				0xFFFFFFBF
-			);
-			Novice::DrawLine(
-				static_cast<int>(ps[3].x), static_cast<int>(ps[3].y),
-				static_cast<int>(ps[2].x), static_cast<int>(ps[2].y),
-				0xFFFFFFBF
-			);
-			Novice::DrawLine(
-				static_cast<int>(ps[2].x), static_cast<int>(ps[2].y),
-				static_cast<int>(ps[0].x), static_cast<int>(ps[0].y),
-				0xFFFFFFBF
-			);
-		}
-	};
-
-	struct Triangle {
-		Vec3 Vertices_[3];
-	};
-
-	struct TriangleIndicator : public Triangle {
-		void Draw(const Mat4& vpVp_) {
-			Vec3 screenVerts[3]{
-				Vertices_[0] * vpVp_,
-				Vertices_[1] * vpVp_,
-				Vertices_[2] * vpVp_,
-			};
-
-			Novice::DrawLine(
-				static_cast<int>(screenVerts[0].x), static_cast<int>(screenVerts[0].y),
-				static_cast<int>(screenVerts[1].x), static_cast<int>(screenVerts[1].y),
-				0xFFFFFFBF
-			);
-			Novice::DrawLine(
-				static_cast<int>(screenVerts[1].x), static_cast<int>(screenVerts[1].y),
-				static_cast<int>(screenVerts[2].x), static_cast<int>(screenVerts[2].y),
-				0xFFFFFFBF
-			);
-			Novice::DrawLine(
-				static_cast<int>(screenVerts[2].x), static_cast<int>(screenVerts[2].y),
-				static_cast<int>(screenVerts[0].x), static_cast<int>(screenVerts[0].y),
-				0xFFFFFFBF
-			);
-			Novice::DrawTriangle(
-				static_cast<int>(screenVerts[0].x), static_cast<int>(screenVerts[0].y),
-				static_cast<int>(screenVerts[1].x), static_cast<int>(screenVerts[1].y),
-				static_cast<int>(screenVerts[2].x), static_cast<int>(screenVerts[2].y),
-				0xFFFFFF0F,
-				kFillModeSolid
-			);
-		}
-	};
-
-	class HW_02_04 {
+	class HW_02_05 {
 	private:
 		Vec3 CameraRotate_{ 0.6f, 0.6f, 0.0f };
 		Vec3 CameraTranslate_{ -5.25f, 7.0f, -7.5f };
@@ -161,66 +38,12 @@ namespace MT3 {
 		//Mat4 Inv_PVp_{};
 		Mat4 VPVp_{};
 
-		LineSegmentIndicator Seg_{};
-		TriangleIndicator Triangle_{};
-		Sphere PointIndicator_{};
-
 		Grid Grid_{};
 
 		char Keys_[256]{};
 
-		bool IsCollided(const LineSegment& seg_, const Triangle& tri_) {
-			Plane plane{};
-			plane.Normal_ = Vec3::Cross(
-				Triangle_.Vertices_[1] - Triangle_.Vertices_[0],
-				Triangle_.Vertices_[2] - Triangle_.Vertices_[1]
-			);
-			plane.Normal_ = plane.Normal_.Norm();
-			// Dot(triangle.Vertices_[0], plane.Normal_) ==
-			// Dot(triangle.Vertices_[1], plane.Normal_) ==
-			// Dot(triangle.Vertices_[2], plane.Normal_)
-			plane.Distance_ = Vec3::Dot(Triangle_.Vertices_[0], plane.Normal_);
-
-			float t = -(Vec3::Dot(plane.Normal_, seg_.Origin) / Vec3::Dot(plane.Normal_, seg_.Diff));
-			Vec3 pointOnPlane = seg_.Origin + seg_.Diff * t;
-			PointIndicator_.Translate_ = pointOnPlane;
-			#if defined(_DEBUG)
-			ImGui::Begin("MT3");
-			{
-				ImGui::SeparatorText("Collision");
-				ImGui::Text("t = %f", t);
-			}
-			ImGui::End();
-			#endif
-
-			if ((t >= 0.0f) && (t <= 1.0f)) {
-				Vec3&& v01{ tri_.Vertices_[1] - tri_.Vertices_[0] };
-				Vec3&& v12{ tri_.Vertices_[2] - tri_.Vertices_[1] };
-				Vec3&& v20{ tri_.Vertices_[0] - tri_.Vertices_[2] };
-				
-				Vec3&& v0p{ pointOnPlane - tri_.Vertices_[0] };
-				Vec3&& v1p{ pointOnPlane - tri_.Vertices_[1] };
-				Vec3&& v2p{ pointOnPlane - tri_.Vertices_[2] };
-				
-				Vec3&& v01CrossV1p{ Vec3::Cross(v01, v1p) };
-				Vec3&& v12CrossV2p{ Vec3::Cross(v12, v2p) };
-				Vec3&& v20CrossV0p{ Vec3::Cross(v20, v0p) };
-				
-				return (
-					(Vec3::Dot(v01CrossV1p, plane.Normal_) >= 0.0f) &&
-					(Vec3::Dot(v12CrossV2p, plane.Normal_) >= 0.0f) &&
-					(Vec3::Dot(v20CrossV0p, plane.Normal_) >= 0.0f)
-				);
-			}
-
-			return false;
-		}
-
-		/*bool IsCollided(const LineSegment& sg_, const Triangle& tri_) {
-		}*/
-
 	public:
-		HW_02_04() {
+		HW_02_05() {
 			Mat4::Multiply(PVp_, Projection_, Viewport_);
 			//Mat4::Invert(Inv_PVp_, PVp_);
 
@@ -298,7 +121,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	char keys[256]{ 0 };
 	char preKeys[256]{ 0 };
 
-	MT3::HW_02_04 hw{};
+	MT3::HW_02_05 hw{};
 
 	while (Novice::ProcessMessage() == 0) {
 		Novice::BeginFrame();
