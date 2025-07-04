@@ -162,6 +162,7 @@ namespace MT3 {
 		Mat4 VPVp_{};
 
 		LineSegmentIndicator Seg_{};
+		LineSegmentIndicator Normal_{};
 		TriangleIndicator Triangle_{};
 		Sphere PointIndicator_{};
 
@@ -172,23 +173,28 @@ namespace MT3 {
 		bool IsCollided(const LineSegment& seg_, const Triangle& tri_) {
 			Plane plane{};
 			plane.Normal_ = Vec3::Cross(
-				Triangle_.Vertices_[1] - Triangle_.Vertices_[0],
-				Triangle_.Vertices_[2] - Triangle_.Vertices_[1]
+				tri_.Vertices_[1] - tri_.Vertices_[0],
+				tri_.Vertices_[2] - tri_.Vertices_[1]
 			);
 			plane.Normal_ = plane.Normal_.Norm();
+			Normal_.Origin = (tri_.Vertices_[0] + tri_.Vertices_[1] + tri_.Vertices_[2]) / 3.0f;
+			Normal_.Diff = plane.Normal_;
 			// Dot(triangle.Vertices_[0], plane.Normal_) ==
 			// Dot(triangle.Vertices_[1], plane.Normal_) ==
 			// Dot(triangle.Vertices_[2], plane.Normal_)
-			plane.Distance_ = Vec3::Dot(Triangle_.Vertices_[0], plane.Normal_);
+			plane.Distance_ = Vec3::Dot(tri_.Vertices_[0], plane.Normal_);
 
-			float t = -(Vec3::Dot(plane.Normal_, seg_.Origin) / Vec3::Dot(plane.Normal_, seg_.Diff));
+			float t = (plane.Distance_ - Vec3::Dot(plane.Normal_, seg_.Origin) / Vec3::Dot(plane.Normal_, seg_.Diff));
 			Vec3 pointOnPlane = seg_.Origin + seg_.Diff * t;
 			PointIndicator_.Translate_ = pointOnPlane;
 			#if defined(_DEBUG)
 			ImGui::Begin("MT3");
 			{
 				ImGui::SeparatorText("Collision");
+				ImGui::Text("n = (%f, %f, %f)", plane.Normal_.x, plane.Normal_.y, plane.Normal_.z);
+				ImGui::Text("d = %f", plane.Distance_);
 				ImGui::Text("t = %f", t);
+				ImGui::Text("p = (%f, %f, %f)", pointOnPlane.x, pointOnPlane.y, pointOnPlane.z);
 			}
 			ImGui::End();
 			#endif
@@ -216,9 +222,6 @@ namespace MT3 {
 			return false;
 		}
 
-		/*bool IsCollided(const LineSegment& sg_, const Triangle& tri_) {
-		}*/
-
 	public:
 		HW_02_04() {
 			Mat4::Multiply(PVp_, Projection_, Viewport_);
@@ -232,6 +235,8 @@ namespace MT3 {
 			Triangle_.Vertices_[0] = { -2.0f, 0.0f, -0.3f };
 			Triangle_.Vertices_[1] = { -0.3f, 1.6f, 1.5f };
 			Triangle_.Vertices_[2] = { 0.7f, -0.2f, 0.0f };
+
+			Normal_.RGBA = 0xFF00FFFF;
 
 			PointIndicator_.Scale_ = { 0.0625f, 0.0625f, 0.0625f };
 		}
@@ -287,6 +292,7 @@ namespace MT3 {
 			Seg_.Draw(VPVp_);
 
 			Triangle_.Draw(VPVp_);
+			Normal_.Draw(VPVp_);
 			PointIndicator_.Draw(VPVp_);
 		}
 	};
