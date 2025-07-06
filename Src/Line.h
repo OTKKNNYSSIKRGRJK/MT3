@@ -8,7 +8,7 @@ namespace MT3 {
 	struct LineSegment {
 		Vec3 Origin;
 		Vec3 Diff;
-		uint32_t RGBA;
+		uint32_t RGBA{ 0xFFFFFFFF };
 	};
 
 	struct LineSegmentIndicator : public LineSegment {

@@ -3,6 +3,10 @@
 #include"Src/MT3.h"
 #include"Src/MT3Grid.h"
 #include"Src/Sphere.h"
+#include"Src/Line.h"
+#include"Src/Triangle.h"
+#include"Src/AABB.h"
+#include"Src/Collision.h"
 #include<format>
 #include<vector>
 #include<algorithm>
@@ -40,6 +44,11 @@ namespace MT3 {
 
 		Grid Grid_{};
 
+		AABB AABB0_{};
+		AABB AABB1_{};
+
+		int IsCollided_{ 0 };
+
 		char Keys_[256]{};
 
 	public:
@@ -49,17 +58,26 @@ namespace MT3 {
 
 			Grid_.VPVp_ = &VPVp_;
 
-			Seg_.Origin = { -0.45f, 0.4f, -2.0f };
-			Seg_.Diff = { 0.0f, 0.0f, 5.0f };
-
-			Triangle_.Vertices_[0] = { -2.0f, 0.0f, -0.3f };
-			Triangle_.Vertices_[1] = { -0.3f, 1.6f, 1.5f };
-			Triangle_.Vertices_[2] = { 0.7f, -0.2f, 0.0f };
-
-			PointIndicator_.Scale_ = { 0.0625f, 0.0625f, 0.0625f };
+			AABB0_ = {
+				.X_Min = 1.0f,
+				.Y_Min = 1.0f,
+				.Z_Min = 1.0f,
+				.X_Max = 2.0f,
+				.Y_Max = 2.0f,
+				.Z_Max = 2.0f,
+			};
+			AABB1_ = {
+				.X_Min = -1.0f,
+				.Y_Min = -1.0f,
+				.Z_Min = -1.0f,
+				.X_Max = 0.0f,
+				.Y_Max = 0.0f,
+				.Z_Max = 0.0f,
+			};
 		}
 
 		void Update() {
+			#if defined(_DEBUG)
 			ImGui::Begin("MT3");
 			{
 				ImGui::SeparatorText("Camera");
@@ -67,6 +85,7 @@ namespace MT3 {
 				ImGui::DragFloat3("Translate##Camera", CameraTranslate_(), 0.01f);
 			}
 			ImGui::End();
+			#endif
 
 			Camera_ = Mat4::MakeSRTMatrix(
 				{ 1.0f, 1.0f, 1.0f },
@@ -76,41 +95,30 @@ namespace MT3 {
 			Mat4::Invert(View_, Camera_);
 			Mat4::Multiply(VPVp_, View_, PVp_);
 
+			static_cast<AABBIndicator&>(AABB0_).Update("AABB0");
+			static_cast<AABBIndicator&>(AABB1_).Update("AABB1");
+
+			IsCollided_ = IsCollided(AABB0_, AABB1_);
 			#if defined(_DEBUG)
 			ImGui::Begin("MT3");
-			ImGui::SeparatorText("Segment");
 			{
-				ImGui::DragFloat3("Origin##Segment", Seg_.Origin(), 0.01f);
-				ImGui::DragFloat3("Diff##Segment", Seg_.Diff(), 0.01f);
-			}
-			ImGui::SeparatorText("Triangle");
-			{
-				ImGui::DragFloat3("Vert0##Triangle", Triangle_.Vertices_[0](), 0.01f);
-				ImGui::DragFloat3("Vert1##Triangle", Triangle_.Vertices_[1](), 0.01f);
-				ImGui::DragFloat3("Vert2##Triangle", Triangle_.Vertices_[2](), 0.01f);
+				ImGui::Text("%d", IsCollided_);
 			}
 			ImGui::End();
 			#endif
-
-			if (IsCollided(Seg_, Triangle_)) {
-				Seg_.RGBA = 0xDF2F08DF;
-				PointIndicator_.RGBA_ = 0xDF2F08DF;
-			}
-			else {
-				Seg_.RGBA = 0xDFDFDFDF;
-				PointIndicator_.RGBA_ = 0xDFDFDFDF;
-			}
-
-			PointIndicator_.Update();
 		}
 
 		void Draw() {
 			Grid_.Draw();
 
-			Seg_.Draw(VPVp_);
-
-			Triangle_.Draw(VPVp_);
-			PointIndicator_.Draw(VPVp_);
+			if (IsCollided_) {
+				static_cast<const AABBIndicator&>(AABB0_).Draw(VPVp_, 0xFF3F3FDF);
+				static_cast<const AABBIndicator&>(AABB1_).Draw(VPVp_, 0x3F3FFFDF);
+			}
+			else {
+				static_cast<const AABBIndicator&>(AABB0_).Draw(VPVp_, 0xFFDFDF7F);
+				static_cast<const AABBIndicator&>(AABB1_).Draw(VPVp_, 0xDFDFFF7F);
+			}
 		}
 	};
 }
