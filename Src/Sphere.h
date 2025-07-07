@@ -4,6 +4,7 @@
 #include<numbers>
 #include"MT3.h"
 #include<Novice.h>
+#include<ImGui.h>
 
 namespace MT3 {
 	static void CreateSphereVertices(
@@ -60,6 +61,11 @@ namespace MT3 {
 	}
 
 	struct Sphere {
+		Vec3 Center;
+		float Radius;
+	};
+
+	struct SphereIndicator : public Sphere {
 	private:
 		std::vector<Vec3> Vertices_{};
 		std::vector<std::pair<uint32_t, uint32_t>> IndexPairs_{};
@@ -67,28 +73,28 @@ namespace MT3 {
 		Mat4 World_{};
 		mutable Mat4 WVPVp_{};
 
-	public:
-		Vec3 Scale_{ 1.0f, 1.0f, 1.0f };
 		Vec3 Rotate_{};
-		Vec3 Translate_{};
 
+	public:
 		uint32_t RGBA_{ 0xFFFFFF7F };
 
-		Sphere(float radius_ = 1.0f, uint32_t div1_ = 12U, uint32_t div2_ = 24U) {
-			CreateSphereGrid(Vertices_, IndexPairs_, { 0.0f, 0.0f, 0.0f }, radius_, div1_, div2_);
+		SphereIndicator(uint32_t div1_ = 12U, uint32_t div2_ = 24U) {
+			Center = { 0.0f, 0.0f, 0.0f };
+			Radius = 1.0f;
+			CreateSphereGrid(Vertices_, IndexPairs_, { 0.0f, 0.0f, 0.0f }, 1.0f, div1_, div2_);
 		}
 
 		void Update() {
-			/*#if defined(_DEBUG)
+			#if defined(_DEBUG)
 			ImGui::Begin("Sphere");
 			{
-				ImGui::DragFloat3("Scale", Scale_(), 0.01f);
-				ImGui::DragFloat3("Rotate", Rotate_(), 0.01f);
-				ImGui::DragFloat3("Translate", Translate_(), 0.01f);
+				ImGui::DragFloat3("Center", Center(), 0.01f);
+				ImGui::DragFloat("Radius", &Radius, 0.01f);
 			}
 			ImGui::End();
-			#endif*/
-			World_ = Mat4::MakeSRTMatrix(Scale_, Rotate_, Translate_);
+			#endif
+
+			World_ = Mat4::MakeSRTMatrix({ Radius, Radius, Radius }, Rotate_, Center);
 		}
 
 		void Draw(const Mat4& vpVp_) const {

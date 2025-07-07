@@ -7,6 +7,8 @@
 
 #include"AABB.h"
 
+#include<algorithm>
+
 namespace MT3 {
 	bool IsCollided(const LineSegment& seg_, const Triangle& tri_) {
 		Plane plane{};
@@ -55,5 +57,19 @@ namespace MT3 {
 			(aabb0_.Z_Min <= aabb1_.Z_Max) &&
 			(aabb0_.Z_Max >= aabb1_.Z_Min)
 		);
+	}
+
+	Vec3 ClosestPoint(const AABB& aabb_, const Sphere& sph_) {
+		return {
+			std::clamp(sph_.Center.x, aabb_.X_Min, aabb_.X_Max),
+			std::clamp(sph_.Center.y, aabb_.Y_Min, aabb_.Y_Max),
+			std::clamp(sph_.Center.z, aabb_.Z_Min, aabb_.Z_Max),
+		};
+	}
+
+	bool IsCollided(const AABB& aabb_, const Sphere& sph_) {
+		Vec3&& closestPoint{ ClosestPoint(aabb_, sph_) };
+		Vec3&& closestPointToCenter{ sph_.Center - closestPoint };
+		return sph_.Radius * sph_.Radius >= Vec3::Dot(closestPointToCenter, closestPointToCenter);
 	}
 }
