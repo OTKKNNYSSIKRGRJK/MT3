@@ -13,7 +13,7 @@
 
 #include<ImGui.h>
 
-const char kWindowTitle[] = "LE2C_08_コウ_シキン_MT3_02_07";
+const char kWindowTitle[] = "LE2C_08_コウ_シキン_MT3_03_00";
 
 namespace {
 	char keys[256]{ 0 };
@@ -21,7 +21,11 @@ namespace {
 }
 
 namespace MT3 {
-	class HW_02_07 {
+	inline Vec3 Lerp(const Vec3& v0_, const Vec3& v1_, float t_) {
+		return v0_ * (1.0f - t_) + v1_ * t_;
+	}
+
+	class HW_03_00 {
 	private:
 		Vec3 CameraRotate_{ 0.6f, 0.6f, 0.0f };
 		Vec3 CameraTranslate_{ -5.25f, 7.0f, -7.5f };
@@ -37,15 +41,34 @@ namespace MT3 {
 
 		Grid Grid_{};
 
-		AABB AABB_{};
-		LineSegmentIndicator Seg_{};
+		std::vector<Vec3> BezierPoints_{};
+		Vec3 ControlPoint0_{ -2.5f, 0.0f, 0.0f };
+		Vec3 ControlPoint1_{ 0.0f, 2.5f, 0.0f };
+		Vec3 ControlPoint2_{ 2.5f, 0.0f, 0.0f };
 
 		int IsCollided_{ 0 };
 
 		char Keys_[256]{};
 
+		void GenerateBezier() {
+			static float inv_256 = 1.0f / 256.0f;
+			BezierPoints_.clear();
+			BezierPoints_.emplace_back(ControlPoint0_);
+			for (int i = 1; i < 256; ++i) {
+				float t = i * inv_256;
+				BezierPoints_.emplace_back(
+					Lerp(
+						Lerp(ControlPoint0_, ControlPoint1_, t),
+						Lerp(ControlPoint1_, ControlPoint2_, t),
+						t
+					)
+				);
+			}
+			BezierPoints_.emplace_back(ControlPoint2_);
+		}
+
 	public:
-		HW_02_07() {
+		HW_03_00() {
 			Camera_ = Mat4::MakeSRTMatrix(
 				{ 1.0f, 1.0f, 1.0f },
 				CameraRotate_,
@@ -58,17 +81,7 @@ namespace MT3 {
 
 			Grid_.VPVp_ = &VPVp_;
 
-			AABB_ = {
-				.X_Min = 1.0f,
-				.Y_Min = 1.0f,
-				.Z_Min = 1.0f,
-				.X_Max = 2.0f,
-				.Y_Max = 2.0f,
-				.Z_Max = 2.0f,
-			};
-
-			Seg_.Diff = { 1.0f, 1.0f, 0.0f };
-			Seg_.RGBA = 0xFFFFFFFF;
+			BezierPoints_.reserve(512);
 		}
 
 		void Update() {
@@ -109,48 +122,42 @@ namespace MT3 {
 				ImGui::Text("Use WASD to move the view.");
 				ImGui::Text("Use Q/E to rotate the view.");
 				ImGui::Text("Scroll the mouse wheel to zoom in/out.");
-				/*ImGui::SeparatorText("Camera");
-				ImGui::DragFloat3("Rotate##Camera", CameraRotate_(), 0.01f);
-				ImGui::DragFloat3("Translate##Camera", CameraTranslate_(), 0.01f);*/
-				ImGui::SeparatorText("Line Segment");
-				ImGui::DragFloat3("Origin##Seg", Seg_.Origin(), 0.01f);
-				ImGui::DragFloat3("Diff##Seg", Seg_.Diff(), 0.01f);
+
+				ImGui::SeparatorText("Bezier");
+				ImGui::DragFloat3("Control Point 0", ControlPoint0_(), 0.01f);
+				ImGui::DragFloat3("Control Point 1", ControlPoint1_(), 0.01f);
+				ImGui::DragFloat3("Control Point 2", ControlPoint2_(), 0.01f);
 			}
 			ImGui::End();
 			#endif
 
-			/*Camera_ = Mat4::MakeSRTMatrix(
-				{ 1.0f, 1.0f, 1.0f },
-				CameraRotate_,
-				CameraTranslate_
-			);
-			Mat4::Invert(View_, Camera_);*/
 			Mat4::Multiply(VPVp_, View_, PVp_);
 
-			static_cast<AABBIndicator&>(AABB_).Update("AABB");
-
-			/*#if defined(_DEBUG)
-			Vec3&& closetPoint = ClosestPoint(AABB_, Sphere_);
-			ImGui::Begin("MT3");
-			{
-				ImGui::Text("ClosestPoint = (%f, %f, %f)", closetPoint.x, closetPoint.y, closetPoint.z);
-			}
-			ImGui::End();
-			#endif*/
-			IsCollided_ = IsCollided(AABB_, Seg_);
+			GenerateBezier();
 		}
 
 		void Draw() {
 			Grid_.Draw();
 
-			if (IsCollided_) {
-				static_cast<const AABBIndicator&>(AABB_).Draw(VPVp_, 0xFF3F3FDF);
+			static LineSegmentIndicator seg{};
+			static SphereIndicator p{};
+			seg.RGBA = 0xBFBFFFFF;
+			for (size_t i = 0LLU; i < BezierPoints_.size() - 1LLU; ++i) {
+				seg.Origin = BezierPoints_[i];
+				seg.Diff = BezierPoints_[i + 1LLU] - seg.Origin;
+				seg.Draw(VPVp_);
 			}
-			else {
-				static_cast<const AABBIndicator&>(AABB_).Draw(VPVp_, 0xFFDFDF7F);
-			}
-
-			Seg_.Draw(VPVp_);
+			p.RGBA_ = 0xFF0000FF;
+			p.Radius = 0.0625f;
+			p.Center = ControlPoint0_;
+			p.Update();
+			p.Draw(VPVp_);
+			p.Center = ControlPoint1_;
+			p.Update();
+			p.Draw(VPVp_);
+			p.Center = ControlPoint2_;
+			p.Update();
+			p.Draw(VPVp_);
 		}
 	};
 }
@@ -158,7 +165,7 @@ namespace MT3 {
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Novice::Initialize(kWindowTitle, 1280, 720);
 
-	MT3::HW_02_07 hw{};
+	MT3::HW_03_00 hw{};
 
 	while (Novice::ProcessMessage() == 0) {
 		Novice::BeginFrame();

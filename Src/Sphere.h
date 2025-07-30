@@ -85,14 +85,14 @@ namespace MT3 {
 		}
 
 		void Update() {
-			#if defined(_DEBUG)
+			/*#if defined(_DEBUG)
 			ImGui::Begin("Sphere");
 			{
 				ImGui::DragFloat3("Center", Center(), 0.01f);
 				ImGui::DragFloat("Radius", &Radius, 0.01f);
 			}
 			ImGui::End();
-			#endif
+			#endif*/
 
 			World_ = Mat4::MakeSRTMatrix({ Radius, Radius, Radius }, Rotate_, Center);
 		}
