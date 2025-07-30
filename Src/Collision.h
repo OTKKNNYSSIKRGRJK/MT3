@@ -9,8 +9,10 @@
 
 #include<algorithm>
 
+//#include<imgui.h>
+
 namespace MT3 {
-	bool IsCollided(const LineSegment& seg_, const Triangle& tri_) {
+	inline bool IsCollided(const LineSegment& seg_, const Triangle& tri_) {
 		Plane plane{};
 		plane.Normal_ = Vec3::Cross(
 			tri_.Vertices_[1] - tri_.Vertices_[0],
@@ -48,7 +50,7 @@ namespace MT3 {
 		return false;
 	}
 
-	bool IsCollided(const AABB& aabb0_, const AABB& aabb1_) {
+	inline bool IsCollided(const AABB& aabb0_, const AABB& aabb1_) {
 		return (
 			(aabb0_.X_Min <= aabb1_.X_Max) &&
 			(aabb0_.X_Max >= aabb1_.X_Min) &&
@@ -59,7 +61,7 @@ namespace MT3 {
 		);
 	}
 
-	Vec3 ClosestPoint(const AABB& aabb_, const Sphere& sph_) {
+	inline Vec3 ClosestPoint(const AABB& aabb_, const Sphere& sph_) {
 		return {
 			std::clamp(sph_.Center.x, aabb_.X_Min, aabb_.X_Max),
 			std::clamp(sph_.Center.y, aabb_.Y_Min, aabb_.Y_Max),
@@ -67,9 +69,48 @@ namespace MT3 {
 		};
 	}
 
-	bool IsCollided(const AABB& aabb_, const Sphere& sph_) {
+	inline bool IsCollided(const AABB& aabb_, const Sphere& sph_) {
 		Vec3&& closestPoint{ ClosestPoint(aabb_, sph_) };
 		Vec3&& closestPointToCenter{ sph_.Center - closestPoint };
 		return sph_.Radius * sph_.Radius >= Vec3::Dot(closestPointToCenter, closestPointToCenter);
+	}
+
+	inline bool IsCollided(const AABB& aabb_, const LineSegment& seg_) {
+		float txmin = (aabb_.X_Min - seg_.Origin.x) / seg_.Diff.x;
+		float txmax = (aabb_.X_Max - seg_.Origin.x) / seg_.Diff.x;
+		float txnear = std::min<float>(txmin, txmax);
+		float txfar = std::max<float>(txmin, txmax);
+		float tymin = (aabb_.Y_Min - seg_.Origin.y) / seg_.Diff.y;
+		float tymax = (aabb_.Y_Max - seg_.Origin.y) / seg_.Diff.y;
+		float tynear = std::min<float>(tymin, tymax);
+		float tyfar = std::max<float>(tymin, tymax);
+		float tzmin = (aabb_.Z_Min - seg_.Origin.z) / seg_.Diff.z;
+		float tzmax = (aabb_.Z_Max - seg_.Origin.z) / seg_.Diff.z;
+		float tznear = std::min<float>(tzmin, tzmax);
+		float tzfar = std::max<float>(tzmin, tzmax);
+
+		float tmin = std::max<float>(std::max<float>(txnear, tynear), tznear);
+		float tmax = std::min<float>(std::min<float>(txfar, tyfar), tzfar);
+
+		/*ImGui::Begin("Debug");
+		ImGui::Text("txmin  = %f", txmin);
+		ImGui::Text("txmax  = %f", txmax);
+		ImGui::Text("txnear = %f", txnear);
+		ImGui::Text("txfar  = %f", txfar);
+		ImGui::Text("tymin  = %f", tymin);
+		ImGui::Text("tymax  = %f", tymax);
+		ImGui::Text("tynear = %f", tynear);
+		ImGui::Text("tyfar  = %f", tyfar);
+		ImGui::Text("tzmin  = %f", tzmin);
+		ImGui::Text("tzmax  = %f", tzmax);
+		ImGui::Text("tznear = %f", tznear);
+		ImGui::Text("tzfar  = %f", tzfar);
+		ImGui::Text("tmin   = %f", tmin);
+		ImGui::Text("tmax   = %f", tmax);
+		ImGui::Text("tmin < tmax ? %d", tmin < tmax);
+		ImGui::End();*/
+
+		if (tmin < tmax) { return (tmin <= 1.0f && tmax >= 0.0f); }
+		return false;
 	}
 }

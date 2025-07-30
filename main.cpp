@@ -13,22 +13,15 @@
 
 #include<ImGui.h>
 
-const char kWindowTitle[] = "LE2C_08_コウ_シキン_MT3_02_06";
+const char kWindowTitle[] = "LE2C_08_コウ_シキン_MT3_02_07";
+
+namespace {
+	char keys[256]{ 0 };
+	char preKeys[256]{ 0 };
+}
 
 namespace MT3 {
-	namespace {
-		#if defined(_DEBUG)
-		void ImGuiPrintMat4(const Mat4& m_) {
-			for (int i = 0; i < 4; ++i) {
-				ImGui::Text(
-					"%7.2f%7.2f%7.2f%7.2f", m_[i][0], m_[i][1], m_[i][2], m_[i][3]
-				);
-			};
-		}
-		#endif
-	}
-
-	class HW_02_06 {
+	class HW_02_07 {
 	private:
 		Vec3 CameraRotate_{ 0.6f, 0.6f, 0.0f };
 		Vec3 CameraTranslate_{ -5.25f, 7.0f, -7.5f };
@@ -45,14 +38,21 @@ namespace MT3 {
 		Grid Grid_{};
 
 		AABB AABB_{};
-		SphereIndicator Sphere_{};
+		LineSegmentIndicator Seg_{};
 
 		int IsCollided_{ 0 };
 
 		char Keys_[256]{};
 
 	public:
-		HW_02_06() {
+		HW_02_07() {
+			Camera_ = Mat4::MakeSRTMatrix(
+				{ 1.0f, 1.0f, 1.0f },
+				CameraRotate_,
+				CameraTranslate_
+			);
+			Mat4::Invert(View_, Camera_);
+
 			Mat4::Multiply(PVp_, Projection_, Viewport_);
 			//Mat4::Invert(Inv_PVp_, PVp_);
 
@@ -66,29 +66,68 @@ namespace MT3 {
 				.Y_Max = 2.0f,
 				.Z_Max = 2.0f,
 			};
+
+			Seg_.Diff = { 1.0f, 1.0f, 0.0f };
+			Seg_.RGBA = 0xFFFFFFFF;
 		}
 
 		void Update() {
+			if (keys[DIK_W]) { View_[3][1] += 0.0075f * View_[3][2]; }
+			if (keys[DIK_S]) { View_[3][1] -= 0.0075f * View_[3][2]; }
+			if (keys[DIK_A]) { View_[3][0] -= 0.0075f * View_[3][2]; }
+			if (keys[DIK_D]) { View_[3][0] += 0.0075f * View_[3][2]; }
+			if (keys[DIK_Q]) { Mat4::Multiply(View_, Mat4::MakeRotateYMatrix(-0.01f), View_); }
+			if (keys[DIK_E]) { Mat4::Multiply(View_, Mat4::MakeRotateYMatrix(0.01f), View_); }
+			/*static int mousePrevX{ 0 }, mousePrevY{ 0 };
+			static int mouseCurX{ 0 }, mouseCurY{ 0 };
+			static int mouseDeltaX{}, mouseDeltaY{};
+			if (Novice::IsPressMouse(0)) {
+				if (Novice::IsTriggerMouse(0)) {
+					Novice::GetMousePosition(&mousePrevX, &mousePrevY);
+				}
+				else {
+					mousePrevX = mouseCurX;
+					mousePrevY = mouseCurY;
+				}
+				Novice::GetMousePosition(&mouseCurX, &mouseCurY);
+			}
+			else {
+				mousePrevX = mouseCurX;
+				mousePrevY = mouseCurY;
+			}
+			mouseDeltaX = mouseCurX - mousePrevX;
+			mouseDeltaY = mouseCurY - mousePrevY;
+			View_[3][0] += mouseDeltaX * 0.005f;
+			View_[3][1] += mouseDeltaY * (-0.005f);*/
+			View_[3][2] += Novice::GetWheel() * (-0.005f);
+
 			#if defined(_DEBUG)
 			ImGui::Begin("MT3");
 			{
-				ImGui::SeparatorText("Camera");
+				ImGui::SeparatorText("View Operation");
+				//ImGui::Text("Drag the mouse while holding the left button\nto move the view.");
+				ImGui::Text("Use WASD to move the view.");
+				ImGui::Text("Use Q/E to rotate the view.");
+				ImGui::Text("Scroll the mouse wheel to zoom in/out.");
+				/*ImGui::SeparatorText("Camera");
 				ImGui::DragFloat3("Rotate##Camera", CameraRotate_(), 0.01f);
-				ImGui::DragFloat3("Translate##Camera", CameraTranslate_(), 0.01f);
+				ImGui::DragFloat3("Translate##Camera", CameraTranslate_(), 0.01f);*/
+				ImGui::SeparatorText("Line Segment");
+				ImGui::DragFloat3("Origin##Seg", Seg_.Origin(), 0.01f);
+				ImGui::DragFloat3("Diff##Seg", Seg_.Diff(), 0.01f);
 			}
 			ImGui::End();
 			#endif
 
-			Camera_ = Mat4::MakeSRTMatrix(
+			/*Camera_ = Mat4::MakeSRTMatrix(
 				{ 1.0f, 1.0f, 1.0f },
 				CameraRotate_,
 				CameraTranslate_
 			);
-			Mat4::Invert(View_, Camera_);
+			Mat4::Invert(View_, Camera_);*/
 			Mat4::Multiply(VPVp_, View_, PVp_);
 
-			static_cast<AABBIndicator&>(AABB_).Update("AABB0");
-			Sphere_.Update();
+			static_cast<AABBIndicator&>(AABB_).Update("AABB");
 
 			/*#if defined(_DEBUG)
 			Vec3&& closetPoint = ClosestPoint(AABB_, Sphere_);
@@ -98,7 +137,7 @@ namespace MT3 {
 			}
 			ImGui::End();
 			#endif*/
-			IsCollided_ = IsCollided(AABB_, Sphere_);
+			IsCollided_ = IsCollided(AABB_, Seg_);
 		}
 
 		void Draw() {
@@ -111,7 +150,7 @@ namespace MT3 {
 				static_cast<const AABBIndicator&>(AABB_).Draw(VPVp_, 0xFFDFDF7F);
 			}
 
-			Sphere_.Draw(VPVp_);
+			Seg_.Draw(VPVp_);
 		}
 	};
 }
@@ -119,10 +158,7 @@ namespace MT3 {
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Novice::Initialize(kWindowTitle, 1280, 720);
 
-	char keys[256]{ 0 };
-	char preKeys[256]{ 0 };
-
-	MT3::HW_02_06 hw{};
+	MT3::HW_02_07 hw{};
 
 	while (Novice::ProcessMessage() == 0) {
 		Novice::BeginFrame();
