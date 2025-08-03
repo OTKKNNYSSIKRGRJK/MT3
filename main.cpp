@@ -13,7 +13,7 @@
 
 #include<ImGui.h>
 
-const char kWindowTitle[] = "LE2C_08_コウ_シキン_MT3_03_00";
+const char kWindowTitle[] = "LE2C_08_コウ_シキン_MT3_03_01";
 
 namespace {
 	char keys[256]{ 0 };
@@ -21,11 +21,13 @@ namespace {
 }
 
 namespace MT3 {
-	inline Vec3 Lerp(const Vec3& v0_, const Vec3& v1_, float t_) {
-		return v0_ * (1.0f - t_) + v1_ * t_;
-	}
+	struct SRT {
+		Vec3 Scale;
+		Vec3 Rotate;
+		Vec3 Translate;
+	};
 
-	class HW_03_00 {
+	class HW_03_01 {
 	private:
 		Vec3 CameraRotate_{ 0.6f, 0.6f, 0.0f };
 		Vec3 CameraTranslate_{ -5.25f, 7.0f, -7.5f };
@@ -41,34 +43,25 @@ namespace MT3 {
 
 		Grid Grid_{};
 
-		std::vector<Vec3> BezierPoints_{};
-		Vec3 ControlPoint0_{ -2.5f, 0.0f, 0.0f };
-		Vec3 ControlPoint1_{ 0.0f, 2.5f, 0.0f };
-		Vec3 ControlPoint2_{ 2.5f, 0.0f, 0.0f };
+		SphereIndicator Shoulder_{};
+		SphereIndicator Elbow_{};
+		SphereIndicator Hand_{};
+		SRT ShoulderSRT_{};
+		SRT ElbowSRT_{};
+		SRT HandSRT_{};
+		Mat4 ShoulderLocal_{};
+		Mat4 ElbowLocal_{};
+		Mat4 HandLocal_{};
+		Mat4 ShoulderWorld_{};
+		Mat4 ElbowWorld_{};
+		Mat4 HandWorld_{};
 
 		int IsCollided_{ 0 };
 
 		char Keys_[256]{};
 
-		void GenerateBezier() {
-			static float inv_256 = 1.0f / 256.0f;
-			BezierPoints_.clear();
-			BezierPoints_.emplace_back(ControlPoint0_);
-			for (int i = 1; i < 256; ++i) {
-				float t = i * inv_256;
-				BezierPoints_.emplace_back(
-					Lerp(
-						Lerp(ControlPoint0_, ControlPoint1_, t),
-						Lerp(ControlPoint1_, ControlPoint2_, t),
-						t
-					)
-				);
-			}
-			BezierPoints_.emplace_back(ControlPoint2_);
-		}
-
 	public:
-		HW_03_00() {
+		HW_03_01() {
 			Camera_ = Mat4::MakeSRTMatrix(
 				{ 1.0f, 1.0f, 1.0f },
 				CameraRotate_,
@@ -81,7 +74,28 @@ namespace MT3 {
 
 			Grid_.VPVp_ = &VPVp_;
 
-			BezierPoints_.reserve(512);
+			ShoulderSRT_ = {
+				.Scale{ 1.0f, 1.0f, 1.0f },
+				.Rotate{ 0.0f, 0.0f, -6.8f },
+				.Translate{ 0.2f, 1.0f, 0.0f },
+			};
+			ElbowSRT_ = {
+				.Scale{ 1.0f, 1.0f, 1.0f },
+				.Rotate{ 0.0f, 0.0f, -1.4f },
+				.Translate{ 0.4f, 0.0f, 0.0f },
+			};
+			HandSRT_ = {
+				.Scale{ 1.0f, 1.0f, 1.0f },
+				.Rotate{ 0.0f, 0.0f, 0.0f },
+				.Translate{ 0.3f, 0.0f, 0.0f },
+			};
+
+			Shoulder_.Radius = 0.0625f;
+			Shoulder_.RGBA_ = 0xFF0000FF;
+			Elbow_.Radius = 0.0625f;
+			Elbow_.RGBA_ = 0x00FF00FF;
+			Hand_.Radius = 0.0625f;
+			Hand_.RGBA_ = 0x0000FFFF;
 		}
 
 		void Update() {
@@ -122,42 +136,64 @@ namespace MT3 {
 				ImGui::Text("Use WASD to move the view.");
 				ImGui::Text("Use Q/E to rotate the view.");
 				ImGui::Text("Scroll the mouse wheel to zoom in/out.");
+				ImGui::Text("");
 
-				ImGui::SeparatorText("Bezier");
-				ImGui::DragFloat3("Control Point 0", ControlPoint0_(), 0.01f);
-				ImGui::DragFloat3("Control Point 1", ControlPoint1_(), 0.01f);
-				ImGui::DragFloat3("Control Point 2", ControlPoint2_(), 0.01f);
+				ImGui::SeparatorText("Shoulder");
+				ImGui::Indent();
+				ImGui::DragFloat3("Scale##Shoulder", ShoulderSRT_.Scale(), 0.01f);
+				ImGui::DragFloat3("Rotate##Shoulder", ShoulderSRT_.Rotate(), 0.01f);
+				ImGui::DragFloat3("Translate##Shoulder", ShoulderSRT_.Translate(), 0.01f);
+				ImGui::Unindent();
+				ImGui::SeparatorText("Elbow");
+				ImGui::Indent();
+				ImGui::DragFloat3("Scale##Elbow", ElbowSRT_.Scale(), 0.01f);
+				ImGui::DragFloat3("Rotate##Elbow", ElbowSRT_.Rotate(), 0.01f);
+				ImGui::DragFloat3("Translate##Elbow", ElbowSRT_.Translate(), 0.01f);
+				ImGui::Unindent();
+				ImGui::SeparatorText("Hand");
+				ImGui::Indent();
+				ImGui::DragFloat3("Scale##Hand", HandSRT_.Scale(), 0.01f);
+				ImGui::DragFloat3("Rotate##Hand", HandSRT_.Rotate(), 0.01f);
+				ImGui::DragFloat3("Translate##Hand", HandSRT_.Translate(), 0.01f);
+				ImGui::Unindent();
 			}
 			ImGui::End();
 			#endif
 
-			Mat4::Multiply(VPVp_, View_, PVp_);
+			ShoulderLocal_ = Mat4::MakeSRTMatrix(ShoulderSRT_.Scale, ShoulderSRT_.Rotate, ShoulderSRT_.Translate);
+			ElbowLocal_ = Mat4::MakeSRTMatrix(ElbowSRT_.Scale, ElbowSRT_.Rotate, ElbowSRT_.Translate);
+			HandLocal_ = Mat4::MakeSRTMatrix(HandSRT_.Scale, HandSRT_.Rotate, HandSRT_.Translate);
 
-			GenerateBezier();
+			ShoulderWorld_ = ShoulderLocal_;
+			Mat4::Multiply(ElbowWorld_, ElbowLocal_, ShoulderWorld_);
+			Mat4::Multiply(HandWorld_, HandLocal_, ElbowWorld_);
+
+			Shoulder_.Center = ShoulderWorld_[3];
+			Shoulder_.Update();
+			Elbow_.Center = ElbowWorld_[3];
+			Elbow_.Update();
+			Hand_.Center = HandWorld_[3];
+			Hand_.Update();
+
+			Mat4::Multiply(VPVp_, View_, PVp_);
 		}
 
 		void Draw() {
 			Grid_.Draw();
 
-			static LineSegmentIndicator seg{};
-			static SphereIndicator p{};
-			seg.RGBA = 0xBFBFFFFF;
-			for (size_t i = 0LLU; i < BezierPoints_.size() - 1LLU; ++i) {
-				seg.Origin = BezierPoints_[i];
-				seg.Diff = BezierPoints_[i + 1LLU] - seg.Origin;
-				seg.Draw(VPVp_);
-			}
-			p.RGBA_ = 0xFF0000FF;
-			p.Radius = 0.0625f;
-			p.Center = ControlPoint0_;
-			p.Update();
-			p.Draw(VPVp_);
-			p.Center = ControlPoint1_;
-			p.Update();
-			p.Draw(VPVp_);
-			p.Center = ControlPoint2_;
-			p.Update();
-			p.Draw(VPVp_);
+			Novice::SetBlendMode(kBlendModeNormal);
+
+			Shoulder_.Draw(VPVp_);
+			Elbow_.Draw(VPVp_);
+			Hand_.Draw(VPVp_);
+
+			static LineSegmentIndicator seg;
+			seg.Origin = Shoulder_.Center;
+			seg.Diff = Elbow_.Center - Shoulder_.Center;
+			seg.Draw(VPVp_);
+			seg.Origin = Elbow_.Center;
+			seg.Diff = Hand_.Center - Elbow_.Center;
+			seg.Draw(VPVp_);
 		}
 	};
 }
@@ -165,7 +201,7 @@ namespace MT3 {
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Novice::Initialize(kWindowTitle, 1280, 720);
 
-	MT3::HW_03_00 hw{};
+	MT3::HW_03_01 hw{};
 
 	while (Novice::ProcessMessage() == 0) {
 		Novice::BeginFrame();
