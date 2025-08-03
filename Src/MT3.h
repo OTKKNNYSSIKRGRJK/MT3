@@ -131,6 +131,12 @@ namespace MT3 {
 			Multiply(*this, *this, rhs_);
 			return *this;
 		}
+
+		inline Mat4 operator*(const Mat4& rhs_) {
+			Mat4 ret{};
+			Multiply(ret, *this, rhs_);
+			return ret;
+		}
 		
 		friend Vec3 operator*(const Vec3& v_, const Mat4& m_);
 
